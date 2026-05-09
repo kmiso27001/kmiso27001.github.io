@@ -1,0 +1,125 @@
+/* General */
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f4f7f6;
+    color: #333;
+    text-align: center;
+    padding: 20px;
+    margin: 0;
+}
+a {
+    color: #007BFF;
+    text-decoration: none;
+}
+a:hover {
+    text-decoration: underline;
+}
+
+/* Button */
+.blue-button {
+    background-color: #007BFF;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+    margin: 20px 2px;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: background-color 0.3s, transform 0.2s;
+}
+.blue-button:hover {
+    background-color: #0056b3;
+    transform: translateY(-2px);
+}
+
+/* Feature Container (Glassmorphism) */
+.feature-container {
+    margin: 40px auto;
+    max-width: 800px;
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(10px);
+    border-radius: 15px;
+    padding: 30px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    border: 1px solid rgba(255,255,255,0.5);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.feature-container:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
+}
+
+/* Feature Image (Floating animation & hover zoom) */
+.feature-image {
+    width: 100%;
+    max-width: 600px;
+    border-radius: 12px;
+    box-shadow: 0 8px 25px rgba(0, 123, 255, 0.2);
+    transition: transform 0.5s ease, filter 0.5s ease;
+    cursor: pointer;
+    animation: float 6s ease-in-out infinite;
+}
+.feature-image:hover {
+    transform: scale(1.05);
+    filter: brightness(1.1) contrast(1.1);
+    animation-play-state: paused;
+}
+
+@keyframes float {
+    0% { transform: translateY(0px); }
+    50% { transform: translateY(-15px); }
+    100% { transform: translateY(0px); }
+}
+
+/* Feature Text */
+.feature-text {
+    margin-top: 25px;
+    text-align: left;
+    line-height: 1.8;
+    color: #444;
+}
+.feature-text h2 {
+    color: #007BFF;
+    text-align: center;
+    margin-bottom: 15px;
+}
+.feature-text ul {
+    list-style-type: none;
+    padding-left: 0;
+}
+.feature-text li {
+    position: relative;
+    padding-left: 30px;
+    margin-bottom: 15px;
+    font-size: 1.1em;
+}
+.feature-text li::before {
+    content: "✨";
+    position: absolute;
+    left: 0;
+    top: 0;
+}
+
+/* Cursor Blink Animation */
+@keyframes blink {
+    0%, 100% { border-color: transparent; }
+    50% { border-color: #333; }
+}
+
+/* Date Display Feature */
+.date-display {
+    font-size: 1.2em;
+    font-weight: bold;
+    color: #555;
+    margin-bottom: 20px;
+    padding: 10px;
+    background: #e9ecef;
+    border-radius: 8px;
+    display: inline-block;
+}
