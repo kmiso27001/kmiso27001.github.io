@@ -16,8 +16,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // 平滑的滾動進入動畫 (Scroll Animation)
     const panels = document.querySelectorAll('.glass-panel');
     const observerOptions = {
-        threshold: 0.15,
-        rootMargin: "0px 0px -50px 0px"
+        threshold: 0.01,
+        rootMargin: "0px"
     };
 
     const observer = new IntersectionObserver((entries, observer) => {
