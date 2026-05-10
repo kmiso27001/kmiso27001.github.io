@@ -1,0 +1,91 @@
+背景資訊
+1. 這次要實作的是 Vulnerable JS Library
+2. 參考資料如下
+
+Vulnerable JS Library (使用具安全性弱點的 JS 函式庫)
+1. 簡介 (Introduction)
+(1) Vulnerable JS Library 是指網頁應用程式引用了已知存在安全漏洞
+（CVE）的第三方 JavaScript 函式庫（如舊版的 jQuery、Bootstrap
+或 Handlebars）。
+(2) 其核心問題在於缺乏依賴管理與更新機制。隨著開源技術的演進，許多
+舊版函式庫被發現存在跨站腳本攻擊 (XSS)、原型污染 (Prototype
+Pollution) 或點擊劫持等漏洞，並已公開在 CVE 或 NPM 漏洞資料庫
+中。
+(3) 攻擊者可以透過掃描工具辨識目標網站所使用的 JS 版本，並針對該版
+本的已知弱點進行精確打擊。由於這些漏洞存在於底層工具中，即使開
+發者的業務邏輯代碼寫得再安全，也可能因為引用的元件而導致整體防
+線潰敗。
+2. 範例 (Example Scenario)
+漏洞背景： 假設某網站為了快速開發，引用的 jQuery 版本為極老舊的
+1.10.2。
+(1) 已知弱點： 該版本在處理選擇器（Selector）時存在 XSS 漏洞，攻擊
+者可以透過特定格式的字串繞過過濾。
+(2) 攻擊手法： 攻擊者建構一個帶有惡意 Payload 的 URL：
+https://example.com/#<img src=x
+onerror=alert('XSS_Vulnerability')>
+(3) 觸發攻擊： 舊版 jQuery 在解析 location.hash 時，會錯誤地執行該
+HTML 標籤內的 JavaScript 代碼。若受害者點擊連結，攻擊者即可竊取
+其 Session 或執行未經授權的操作。
+3. 危險寫法 (Vulnerable Code - HTML/PHP)
+以下是在 PHP 模板中常見的「一勞永逸」式引入，開發者往往在專案
+上線後就再也沒有檢查過版本：
+HTML
+<html>
+<head>
+<title>我的系統</title>
+<script src="https://code.jquery.com/jquery-
+1.10.2.min.js"></script>
+<script
+src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.0/js/bootst
+rap.min.js"></script>
+</head>
+<body>
+<h1>系統內容</h1>
+<script>
+// 舊版 jQuery 對 $(location.hash) 的處理存在漏洞
+$(location.hash);
+</script>
+</body>
+</html>
+4. 安全寫法 (Secure Code - Management)
+解決此類問題主要不在於「程式邏輯」，而是在於「版本控管」與「資
+源引用方式」。
+(1) 步驟 A：引用穩定且更新的版本
+應切換至官方維護中的長期支援版本（LTS），並使用子資源完整性
+（SRI）驗證：
+HTML
+<script
+src="https://code.jquery.com/jquery-3.7.1.min.js"
+integrity="sha256-
+/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo="
+crossorigin="anonymous">
+</script>
+(2) 步驟 B：使用依賴管理工具 (npm/composer)
+不要手動下載檔案，而是透過工具自動化管理，這能讓你輕鬆追蹤哪
+些元件需要修補。
+Bash
+# 使用 npm 檢查專案中已知的漏洞
+npm audit
+5. 開發建議 (Development Recommendations)
+從資管與資訊安全架構角度出發，建議採取以下多層次防禦策略：
+(1) 建立軟體材料清單 (SBOM)： 記錄專案中所使用的所有第三方組件及
+其版本。這是資管系統審核（Audit）與合規性的基礎。
+(2) 啟用自動化弱點掃描： 建議在 CI/CD 流程中整合自動化工具（如
+GitHub Dependabot 或 Snyk），當依賴項出現漏洞時，系統會自動發
+出警報並建議修復版本。
+(3) 使用子資源完整性 (SRI)： 當從 CDN 引用資源時，務必包含
+integrity 雜湊值。這能確保即使 CDN 伺服器被駭，惡意代碼也不會
+在用戶的瀏覽器中執行。
+(4) 實施 CSP 指令： 透過 script-src 限制僅能載入來自受信任網域或
+特定雜湊值的腳本，縮小攻擊面。
+(5) 虛擬補丁 (Virtual Patching)： 若因系統架構過於老舊而無法立即
+升級函式庫，可考慮在 Web 應用程式防火牆 (WAF) 上設定過濾規
+則，攔截已知的針對性攻擊流量。
+
+須完成的工作
+增加一個Vulnerable JS Library的互動網頁,當然,index.html也要做對應的修改
+以下是我期望的結果
+1. 網站外觀要和上一階段一樣有科技感
+2. 不論是危險寫法或安全寫法
+
+

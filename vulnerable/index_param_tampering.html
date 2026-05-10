@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="專為高職生設計的資訊安全教學網站，深入解析 Parameter Tampering 參數篡改漏洞。">
+    <title>Parameter Tampering 參數篡改 完全解析</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Fira+Code:wght@400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="background-effects">
+        <div class="glow-orb orb-1" style="background: radial-gradient(circle, rgba(255,184,77,0.4) 0%, transparent 70%);"></div>
+        <div class="glow-orb orb-2" style="background: radial-gradient(circle, rgba(77,255,184,0.4) 0%, transparent 70%);"></div>
+    </div>
+
+    <header class="hero">
+        <div class="container">
+            <h1 class="glitch" data-text="Parameter Tampering">Parameter Tampering</h1>
+            <p class="subtitle">絕對不要信任前端：當駭客用 1 元買走高級筆電 (實戰篇)</p>
+        </div>
+    </header>
+
+    <main class="container">
+        <!-- 返回首頁 -->
+        <div style="margin-bottom: 20px;">
+            <a href="index.html" class="btn" style="text-decoration: none; display: inline-block; padding: 10px 20px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 5px; color: white;">⬅️ 返回首頁</a>
+        </div>
+
+        <!-- ====== 第 7 章：Parameter Tampering ====== -->
+        <div style="margin: 60px 0; border-top: 2px dashed #ffb84d; text-align: center; position: relative;">
+            <span style="background: var(--bg-color); padding: 0 20px; font-size: 1.5rem; color: #ffb84d; position: relative; top: -18px; font-weight: bold;">實戰篇：Parameter Tampering</span>
+        </div>
+
+        <!-- Intro -->
+        <section class="glass-panel" id="param-intro">
+            <h2><span class="icon">🕵️</span> 什麼是參數篡改 (Parameter Tampering)？</h2>
+            <div class="grid-3">
+                <div class="card">
+                    <h3>🎭 過度信任客戶端</h3>
+                    <p>開發者有時會把重要數據（如商品價格、權限等級）放在隱藏表單 <code>&lt;input type="hidden"&gt;</code> 或是 URL 參數中，以為使用者看不到就不會改。</p>
+                </div>
+                <div class="card warning">
+                    <h3>🛠️ F12 開發者工具</h3>
+                    <p>駭客根本不需要寫高深的程式，只要按下瀏覽器的 F12 鍵打開開發者工具，就能輕易把隱藏的價格改成 1 元，再按下送出。</p>
+                </div>
+                <div class="card danger">
+                    <h3>💥 後端未經二次校驗</h3>
+                    <p>如果伺服器後端收到訂單後，直接使用前端傳來的價格進行結帳，而沒有去資料庫重新查詢真實價格，就會產生嚴重的財務損失！</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 實戰演練 -->
+        <section class="glass-panel" id="param-playground">
+            <h2><span class="icon">🕹️</span> 實戰演練：親自體驗 1 元買筆電</h2>
+            <p class="scenario-desc">下方是一個模擬的電商結帳頁面，一台高級電競筆電要價 $50000。請先點擊「正常結帳」，然後再點擊下方的「😈 模擬駭客篡改參數」，這會模擬駭客把隱藏的 price 欄位改成 1 元後送出！</p>
+            
+            <div class="scenario-grid">
+                <!-- Param Tampering Vulnerable -->
+                <div class="scenario-card attack">
+                    <div class="card-header" style="background: rgba(255, 75, 75, 0.2);">❌ 測試危險寫法 (信任前端價格)</div>
+                    <div class="card-body">
+                        <form id="form-param-vulnerable" class="demo-form">
+                            <!-- 價格隱藏在前端，這很危險！ -->
+                            <input type="hidden" name="item_id" value="101">
+                            <input type="hidden" name="price" value="50000">
+                            <input type="hidden" name="qty" value="1">
+                            
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 15px; font-size: 1.2rem; font-weight: bold; background: #222; padding: 15px; border-radius: 8px;">
+                                <span>💻 高級電競筆電 x 1</span>
+                                <span style="color: #ffb84d;">$50000</span>
+                            </div>
+                            <button type="submit" class="btn" style="width: 100%; padding: 10px; font-size: 1.1em; cursor: pointer; border-radius: 6px; border: none; background: #555; color: white; font-weight: bold;">🛒 正常結帳</button>
+                        </form>
+                        
+                        <div style="margin-top: 20px; border-top: 1px dashed #666; padding-top: 15px;">
+                            <p style="font-size: 0.9em; color: #ffb84d; margin-bottom: 10px;">👇 駭客按下了 F12，把隱藏的 price 改成 1：</p>
+                            <button id="btn-param-attack" class="btn danger-btn" style="width: 100%; padding: 10px; font-size: 1.1em; cursor: pointer; border-radius: 6px; border: none; background: #ff4b4b; color: white; font-weight: bold; box-shadow: 0 0 10px rgba(255,75,75,0.5);">😈 模擬篡改價格 (改為 1 元送出)</button>
+                        </div>
+
+                        <div class="result-box" id="result-param-vulnerable" style="margin-top: 15px; padding: 15px; background: #000; border-radius: 8px; font-family: var(--font-code); font-size: 0.9em; min-height: 80px;">等待結帳...</div>
+                    </div>
+                </div>
+
+                <!-- Param Tampering Secure -->
+                <div class="scenario-card normal">
+                    <div class="card-header" style="background: rgba(77, 255, 184, 0.2);">✅ 測試安全寫法 (後端重新查價)</div>
+                    <div class="card-body">
+                        <form id="form-param-secure" class="demo-form">
+                            <!-- 就算駭客修改了這裡的 price 也沒用，後端根本不看它 -->
+                            <input type="hidden" name="item_id" value="101">
+                            <input type="hidden" name="price" value="50000">
+                            <input type="hidden" name="qty" value="1">
+                            
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 15px; font-size: 1.2rem; font-weight: bold; background: #222; padding: 15px; border-radius: 8px;">
+                                <span>💻 高級電競筆電 x 1</span>
+                                <span style="color: #ffb84d;">$50000</span>
+                            </div>
+                            <button type="submit" class="btn" style="width: 100%; padding: 10px; font-size: 1.1em; cursor: pointer; border-radius: 6px; border: none; background: #45a29e; color: white; font-weight: bold;">🛒 正常結帳</button>
+                        </form>
+                        
+                        <div style="margin-top: 20px; border-top: 1px dashed #666; padding-top: 15px;">
+                            <p style="font-size: 0.9em; color: #ffb84d; margin-bottom: 10px;">👇 駭客再次用 F12 把 price 改成 1 送出：</p>
+                            <button id="btn-param-secure-attack" class="btn warning-btn" style="width: 100%; padding: 10px; font-size: 1.1em; cursor: pointer; border-radius: 6px; border: none; background: #ffb84d; color: black; font-weight: bold; box-shadow: 0 0 10px rgba(255,184,77,0.5);">😈 模擬篡改價格 (改為 1 元送出)</button>
+                        </div>
+
+                        <div class="result-box" id="result-param-secure" style="margin-top: 15px; padding: 15px; background: #000; border-radius: 8px; font-family: var(--font-code); font-size: 0.9em; min-height: 80px;">等待結帳...</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 程式碼對比 -->
+        <section class="glass-panel" id="param-code-comparison">
+            <h2><span class="icon">⚖️</span> 程式碼大對決：參數驗證</h2>
+            <div class="comparison-grid">
+                <!-- Vulnerable -->
+                <div class="code-window vulnerable">
+                    <div class="window-header">
+                        <span class="dot red"></span>
+                        <span class="dot yellow"></span>
+                        <span class="dot green"></span>
+                        <span class="filename">param_vulnerable.php (信任前端 ❌)</span>
+                    </div>
+                    <div class="window-body">
+<pre><code class="language-php">
+$item_id = $_POST['item_id'];
+
+<span class="comment">// 🚨 致命錯誤：直接信任前端傳來的價格！</span>
+<span class="highlight-line-danger">$price = $_POST['price'];</span> 
+$qty = $_POST['qty'];
+
+$total = $price * $qty;
+<span class="comment">// 駭客把 $_POST['price'] 改成 1，公司就虧大了</span>
+process_payment($_SESSION['user_id'], $total);
+</code></pre>
+                    </div>
+                </div>
+
+                <!-- Secure -->
+                <div class="code-window secure">
+                    <div class="window-header">
+                        <span class="dot red"></span>
+                        <span class="dot yellow"></span>
+                        <span class="dot green"></span>
+                        <span class="filename">param_secure.php (後端為準 ✅)</span>
+                    </div>
+                    <div class="window-body">
+<pre><code class="language-php">
+$item_id = (int)$_POST['item_id'];
+$qty = (int)$_POST['qty'];
+
+<span class="comment">// ✨ 安全做法：只拿 ID，其餘敏感數據一律向資料庫查詢</span>
+<span class="highlight-line-safe">$stmt = $pdo->prepare("SELECT price FROM products WHERE id = ?");</span>
+$stmt->execute([$item_id]);
+$product = $stmt->fetch();
+
+<span class="highlight-line-safe">$real_price = $product['price'];</span>
+$total = $real_price * $qty;
+process_payment($_SESSION['user_id'], $total);
+</code></pre>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 開發建議 -->
+        <section class="glass-panel" id="param-recommendations">
+            <h2><span class="icon">🛡️</span> 開發建議：防範參數篡改</h2>
+            <div class="rec-grid">
+                <div class="rec-card">
+                    <div class="rec-icon">👑</div>
+                    <h3>後端權威原則</h3>
+                    <p>涉及金流、權限或業務邏輯的數據，絕對必須在伺服器端進行二次校驗。前端傳來的參數只能視為「意圖」，不能當作「事實」。</p>
+                </div>
+                
+                <div class="rec-card">
+                    <div class="rec-icon">🔍</div>
+                    <h3>輸入驗證與過濾</h3>
+                    <p>嚴格檢查所有參數的資料類型（是否為數字）、範圍（數量不可為負數）。防堵各種邊界測試與異常輸入。</p>
+                </div>
+
+                <div class="rec-card">
+                    <div class="rec-icon">📦</div>
+                    <h3>善用 Session</h3>
+                    <p>敏感的狀態資料（如購物車總額、用戶等級）應存放在伺服器端的 <code>$_SESSION</code> 中，而不是寫在 Cookie 或是隱藏表單裡。</p>
+                </div>
+
+                <div class="rec-card">
+                    <div class="rec-icon">🔑</div>
+                    <h3>數位簽章保護</h3>
+                    <p>若某些情境非得在前端傳遞狀態（例如付款回調的參數），應使用 HMAC 雜湊演算法加上 Secret Key 來對參數進行數位簽章，防止被篡改。</p>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer>
+        <p>為高職生設計的資訊安全教育平台 | 守護代碼，從你我做起 💻</p>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>

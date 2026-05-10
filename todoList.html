@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Todo List</title>
+    <!-- Include main styles for consistent base styling -->
+    <link rel="stylesheet" href="styles/main.css">
+    <!-- Include specific todo styles -->
+    <link rel="stylesheet" href="styles/todo.css">
+    <!-- Font Awesome for icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+
+<body>
+    <div class="dashboard-wrapper">
+        <div class="dashboard-header feature-container">
+            <div class="header-content">
+                <h2>論文進度追蹤系統</h2>
+                <p>網頁設計乙級技術士術科考試資安弱點防禦實作研究</p>
+            </div>
+            <button class="icon-button" onclick="window.location.href='index.html'" title="返回首頁">
+                <i class="fas fa-home"></i>
+            </button>
+        </div>
+
+        <div class="dashboard-content">
+            <!-- Calendar Section -->
+            <div class="calendar-container feature-container">
+                <div class="calendar-header">
+                    <button id="prev-month" class="icon-button"><i class="fas fa-chevron-left"></i></button>
+                    <h3 id="calendar-month-year">2026年 5月</h3>
+                    <button id="next-month" class="icon-button"><i class="fas fa-chevron-right"></i></button>
+                </div>
+                <div class="calendar-grid">
+                    <div class="weekday">日</div>
+                    <div class="weekday">一</div>
+                    <div class="weekday">二</div>
+                    <div class="weekday">三</div>
+                    <div class="weekday">四</div>
+                    <div class="weekday">五</div>
+                    <div class="weekday">六</div>
+                </div>
+                <div id="calendar-days" class="calendar-days">
+                    <!-- JavaScript 會在此生成日期 -->
+                </div>
+            </div>
+
+            <!-- Todo Section -->
+            <div class="todo-container feature-container">
+                <div class="header">
+                    <h2><i class="fas fa-check-square"></i> <span id="todo-date-title">待辦事項</span></h2>
+                </div>
+
+                <div class="input-section">
+                    <textarea id="todo-input" placeholder="新增待辦事項... (按 Enter 送出，Shift+Enter 換行)" rows="8"></textarea>
+                    <button id="add-btn" class="add-button"><i class="fas fa-plus"></i></button>
+                </div>
+
+                <div class="filters">
+                    <button class="filter-btn active" data-filter="all">全部</button>
+                    <button class="filter-btn" data-filter="active">未完成</button>
+                    <button class="filter-btn" data-filter="completed">已完成</button>
+                </div>
+
+                <ul id="todo-list" class="todo-list">
+                    <!-- 待辦事項會透過 JavaScript 動態生成在這裡 -->
+                </ul>
+
+                <div class="todo-stats">
+                    <span id="items-left">0 個未完成項目</span>
+                    <button id="clear-completed" class="clear-btn">清除已完成</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Include todo script -->
+    <script src="scripts/todo.js"></script>
+</body>
+
+</html>

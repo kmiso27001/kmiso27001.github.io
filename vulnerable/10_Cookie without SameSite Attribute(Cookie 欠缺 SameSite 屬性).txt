@@ -1,0 +1,87 @@
+背景資訊
+1. 這次要實作的是 Cookie without SameSite Attribute(Cookie 欠缺 SameSite 屬性)
+2. 參考資料如下
+
+Cookie without SameSite Attribute(Cookie 欠缺 SameSite 屬性)
+1. 簡介 (Introduction)
+(1) SameSite 屬性是 HTTP 響應頭 Set-Cookie 中的一個安全性指令，用
+於告知瀏覽器是否應在跨站請求（Cross-Site Requests）中附帶該
+Cookie。
+(2) 其核心問題在於跨站請求的隱性信任。若未顯式設置 SameSite 屬性，
+舊版瀏覽器預設會隨所有請求發送 Cookie。這使得攻擊者可以利用受
+害者的登入狀態，在第三方網站發起惡意請求（即 CSRF 攻擊）。
+(3) 透過配置 SameSite 屬性，開發者可以精確控制 Cookie 的傳輸行為，
+進而從瀏覽器底層阻斷大多數非預期的跨站請求，強化用戶會話的安全
+性與隱私保護。
+2. 範例 (Example Scenario)
+漏洞場景： 某用戶已登入 shop.com。此時用戶訪問了攻擊者的網站
+evil.com。
+(1) 無 SameSite 防護： evil.com 頁面中包含一個指向
+shop.com/api/delete_account 的自動提交表單。由於 Cookie 沒設
+置 SameSite，瀏覽器發送請求時會自動帶上 shop.com 的 Session
+Cookie，導致帳號被刪除。
+(2) SameSite 屬性分類：
+➢ Strict： 最嚴格。僅允許「同站」請求攜帶 Cookie。從
+Google 搜尋結果點進該站，初期也不會帶 Cookie。
+➢ Lax： 權衡型。允許安全的頂級導航（如點擊連結）帶
+Cookie，但攔截 POST 等具副作用的跨站請求。
+➢ None： 完全允許跨站傳輸。必須搭配 Secure 屬性
+（HTTPS），否則現代瀏覽器會拒絕載入。
+3. 危險寫法 (Vulnerable Code - PHP)
+在早期的 PHP 版本或未經優化的設定中，生成 Cookie 時往往忽略了
+SameSite 屬性：
+// index.php
+session_start();
+// 危險的手動設置方式：僅定義了名稱、值、過期時間與路徑
+setcookie("session_id", "xyz789", time()+3600, "/");
+// 伺服器回傳的 Header 將呈現：
+// Set-Cookie: session_id=xyz789; expires=...; path=/
+// 缺少 SameSite 屬性，在舊版瀏覽器中將暴露於 CSRF 風險下
+4. 安全寫法 (Secure Code - PHP)
+現代 PHP (7.3+) 已支援在 setcookie 函數中以陣列方式配置 SameSite
+屬性。
+(1) 步驟 A：全局 Session 配置
+在程式進入點配置，確保 Session ID Cookie 具備 Lax 屬性（目前大
+多數應用的最佳實踐）：
+session_start([
+'cookie_lifetime' => 3600,
+'cookie_path' => '/',
+'cookie_secure' => true, // 必須在 HTTPS 下運作
+'cookie_httponly' => true, // 配合 HttpOnly 防禦 XSS
+'cookie_samesite' => 'Lax' // 關鍵：防禦跨站請求偽造
+]);
+(2) 步驟 B：個別 Cookie 設定
+$cookie_options = [
+'expires' => time() + 3600,
+'path' => '/',
+'domain' => '',
+'secure' => true,
+'httponly' => true,
+'samesite' => 'Strict' // 針對極度敏感的操作，建議使用
+Strict
+];
+setcookie("auth_token", "secure_value", $cookie_options);
+5. 開發建議 (Development Recommendations)
+從資管與軟體工程實務出發，建議採取以下防禦與管理策略：
+(1) 採納「預設 Lax」原則： 雖然 Chrome 80+ 已開始將未標註的
+Cookie 視為 Lax，但開發者不應依賴瀏覽器的預設行為，應明確在
+代碼中宣告以確保不同瀏覽器（如舊版 Safari）的一致性。
+(2) 區分業務需求： 對於一般展示性頁面使用 Lax；對於金流、權限變
+更等高風險模組，應強制使用 Strict。
+(3) 處理跨站第三方資源： 若網站功能（如嵌入式小工具）確實需要跨
+站傳遞 Cookie，必須設為 SameSite=None 並強制開啟 Secure 屬
+性。
+(4) 監控與審核： 利用 OWASP ZAP 的警報清單，檢查是否有任何 Set-
+Cookie 指令遺漏了 SameSite 屬性，並將其列入資安合規性掃描的
+重點項目。
+(5) 漸進式升級： 針對舊有系統，若暫時無法全面升級 PHP 版本，可考
+慮在 Web 伺服器層級（如 Nginx proxy_cookie_path 或 Apache 的
+標頭重寫規則）統一注入 SameSite 屬性。
+
+須完成的工作
+增加一個Cookie without SameSite Attribute(Cookie 欠缺 SameSite 屬性)的互動網頁,當然,index.html也要做對應的修改
+以下是我期望的結果
+1. 網站外觀要和上一階段一樣有科技感
+2. 不論是危險寫法或安全寫法
+
+

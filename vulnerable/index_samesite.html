@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="專為高職生設計的資訊安全教學網站，深入解析 Cookie SameSite Attribute 漏洞。">
+    <title>Cookie SameSite 屬性 完全解析</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Fira+Code:wght@400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="background-effects">
+        <div class="glow-orb orb-1" style="background: radial-gradient(circle, rgba(255,184,77,0.4) 0%, transparent 70%);"></div>
+        <div class="glow-orb orb-2" style="background: radial-gradient(circle, rgba(77,255,184,0.4) 0%, transparent 70%);"></div>
+    </div>
+
+    <header class="hero">
+        <div class="container">
+            <h1 class="glitch" data-text="SameSite Attribute">Cookie SameSite Attribute</h1>
+            <p class="subtitle">跨站請求的隱性信任：為何你的 Session 會被別人借用？</p>
+        </div>
+    </header>
+
+    <main class="container">
+        <!-- 返回首頁 -->
+        <div style="margin-bottom: 20px;">
+            <a href="index.html" class="btn" style="text-decoration: none; display: inline-block; padding: 10px 20px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 5px; color: white;">⬅️ 返回首頁</a>
+        </div>
+
+        <!-- ====== 第 10 章：Cookie SameSite ====== -->
+        <div style="margin: 60px 0; border-top: 2px dashed #ffb84d; text-align: center; position: relative;">
+            <span style="background: var(--bg-color); padding: 0 20px; font-size: 1.5rem; color: #ffb84d; position: relative; top: -18px; font-weight: bold;">實戰篇：欠缺 SameSite 屬性</span>
+        </div>
+
+        <!-- Intro -->
+        <section class="glass-panel" id="samesite-intro">
+            <h2><span class="icon">🏷️</span> 什麼是 SameSite 屬性？</h2>
+            <div class="grid-3">
+                <div class="card">
+                    <h3>🎭 隱性的跨站信任</h3>
+                    <p>若未設定 SameSite，舊版瀏覽器預設會在所有跨站請求 (Cross-Site Requests) 中附帶 Cookie。這表示駭客能利用您的登入狀態在別的網站發起惡意請求 (CSRF)。</p>
+                </div>
+                <div class="card warning">
+                    <h3>🛡️ SameSite 的三種模式</h3>
+                    <p>• <b>Strict</b>：最嚴格，僅限同站請求攜帶。<br>• <b>Lax</b>：允許安全頂級導航攜帶，阻擋跨站 POST。<br>• <b>None</b>：完全允許跨站，但必須搭配 Secure 屬性。</p>
+                </div>
+                <div class="card danger">
+                    <h3>⚡ 從底層阻斷 CSRF</h3>
+                    <p>相較於傳統的 Anti-CSRF Token，配置 SameSite 屬性可以從瀏覽器底層直接阻斷非預期的跨站請求，是現代 Web 應用最基礎的防禦防線。</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 實戰演練 -->
+        <section class="glass-panel" id="samesite-playground">
+            <h2><span class="icon">🕹️</span> 實戰演練：跨站請求偽造 (CSRF) 模擬</h2>
+            <p class="scenario-desc">下方模擬了兩個購物網站的後台。請點擊「😈 模擬惡意網站 (evil.com) 發送跨站請求」，觀察當缺乏 SameSite 保護時，您的 Session Cookie 是如何被瀏覽器自動帶上，導致帳號被刪除的。</p>
+            
+            <div class="scenario-grid">
+                <!-- SameSite Vulnerable -->
+                <div class="scenario-card attack">
+                    <div class="card-header" style="background: rgba(255, 75, 75, 0.2);">❌ 測試危險配置 (無 SameSite 屬性)</div>
+                    <div class="card-body">
+                        <div style="background: #222; padding: 10px; border-radius: 8px 8px 0 0; border: 1px solid #444; border-bottom: none; display: flex; align-items: center; overflow: hidden;">
+                            <span style="color: #888; margin-right: 10px; white-space: nowrap;">🌐 URL:</span>
+                            <span id="url-samesite-vuln" style="color: #ffb84d; font-family: monospace; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">https://shop.com/samesite_vulnerable.php</span>
+                        </div>
+                        <iframe id="iframe-samesite-vuln" name="iframe-samesite-vuln" src="samesite_vulnerable.php" style="width: 100%; height: 180px; border: 1px solid #444; border-radius: 0 0 8px 8px; background: #fff;"></iframe>
+                        
+                        <button id="btn-samesite-attack" class="btn danger-btn" style="width: 100%; margin-top: 15px; padding: 10px; font-size: 1.1em; cursor: pointer; border-radius: 6px; border: none; font-weight: bold; box-shadow: 0 0 10px rgba(255,75,75,0.5);">😈 模擬惡意網站發送跨站刪除請求</button>
+                    </div>
+                </div>
+
+                <!-- SameSite Secure -->
+                <div class="scenario-card normal">
+                    <div class="card-header" style="background: rgba(77, 255, 184, 0.2);">✅ 測試安全配置 (SameSite=Strict)</div>
+                    <div class="card-body">
+                        <div style="background: #222; padding: 10px; border-radius: 8px 8px 0 0; border: 1px solid #444; border-bottom: none; display: flex; align-items: center; overflow: hidden;">
+                            <span style="color: #888; margin-right: 10px; white-space: nowrap;">🌐 URL:</span>
+                            <span id="url-samesite-secure" style="color: #4dffb8; font-family: monospace; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">https://shop.com/samesite_secure.php</span>
+                        </div>
+                        <iframe id="iframe-samesite-secure" name="iframe-samesite-secure" src="samesite_secure.php" style="width: 100%; height: 180px; border: 1px solid #444; border-radius: 0 0 8px 8px; background: #fff;"></iframe>
+                        
+                        <button id="btn-samesite-secure-attack" class="btn warning-btn" style="width: 100%; margin-top: 15px; padding: 10px; font-size: 1.1em; cursor: pointer; border-radius: 6px; border: none; font-weight: bold; box-shadow: 0 0 10px rgba(255,184,77,0.5);">😈 模擬惡意網站發送跨站刪除請求</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 程式碼對比 -->
+        <section class="glass-panel" id="samesite-code-comparison">
+            <h2><span class="icon">⚖️</span> 程式碼大對決：SameSite 屬性設定</h2>
+            <div class="comparison-grid">
+                <!-- Vulnerable -->
+                <div class="code-window vulnerable">
+                    <div class="window-header">
+                        <span class="dot red"></span>
+                        <span class="dot yellow"></span>
+                        <span class="dot green"></span>
+                        <span class="filename">PHP (危險的配置方式 ❌)</span>
+                    </div>
+                    <div class="window-body">
+<pre><code class="language-php">
+<span class="comment">// 🚨 危險的手動設置方式：僅定義了名稱、值、過期時間與路徑</span>
+<span class="highlight-line-danger">setcookie("session_id", "xyz789", time()+3600, "/");</span>
+
+<span class="comment">// 伺服器回傳的 Header 將呈現：</span>
+<span class="comment">// Set-Cookie: session_id=xyz789; expires=...; path=/</span>
+<span class="comment">// 缺少 SameSite 屬性，舊版瀏覽器將暴露於 CSRF 風險下</span>
+</code></pre>
+                    </div>
+                </div>
+
+                <!-- Secure -->
+                <div class="code-window secure">
+                    <div class="window-header">
+                        <span class="dot red"></span>
+                        <span class="dot yellow"></span>
+                        <span class="dot green"></span>
+                        <span class="filename">PHP 7.3+ (安全的配置方式 ✅)</span>
+                    </div>
+                    <div class="window-body">
+<pre><code class="language-php">
+<span class="comment">// ✨ 現代 PHP 支援以陣列方式精確設定 Cookie 屬性</span>
+$cookie_options = [
+    'expires' => time() + 3600,
+    'path' => '/',
+    'domain' => '',
+    'secure' => true,
+    'httponly' => true,
+    <span class="highlight-line-safe">'samesite' => 'Strict' // 關鍵：防禦跨站請求偽造</span>
+];
+<span class="highlight-line-safe">setcookie("auth_token", "secure_value", $cookie_options);</span>
+
+<span class="comment">// 若為全局 Session 配置：</span>
+<span class="comment">// session_start(['cookie_samesite' => 'Lax', ...]);</span>
+</code></pre>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 開發建議 -->
+        <section class="glass-panel" id="samesite-recommendations">
+            <h2><span class="icon">🛡️</span> 開發建議：SameSite 配置實務</h2>
+            <div class="rec-grid">
+                <div class="rec-card">
+                    <div class="rec-icon">👍</div>
+                    <h3>採納「預設 Lax」原則</h3>
+                    <p>雖然 Chrome 80+ 已預設將未標註的 Cookie 視為 Lax，但為了確保舊版瀏覽器的一致性，開發者應明確在代碼中宣告 SameSite 屬性。</p>
+                </div>
+                
+                <div class="rec-card">
+                    <div class="rec-icon">⚖️</div>
+                    <h3>區分業務需求 (Strict vs Lax)</h3>
+                    <p>一般展示性頁面使用 Lax，確保用戶從外部點擊連結進入時仍保持登入；但對於金流、密碼變更等高風險模組，應強制使用 Strict 阻斷所有跨站請求。</p>
+                </div>
+
+                <div class="rec-card">
+                    <div class="rec-icon">🧩</div>
+                    <h3>處理跨站第三方資源 (None)</h3>
+                    <p>若功能 (如金流 iframe、SSO 單一登入) 確實需要跨站傳遞 Cookie，必須設為 `SameSite=None`，並且強制開啟 `Secure` 屬性 (僅限 HTTPS)。</p>
+                </div>
+
+                <div class="rec-card">
+                    <div class="rec-icon">🔄</div>
+                    <h3>舊系統漸進式升級</h3>
+                    <p>針對無法升級 PHP 的舊系統，可考慮在 Web 伺服器層級 (如 Nginx 的 proxy_cookie_path 或 Apache 的 Header 規則) 統一注入 SameSite 屬性。</p>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer>
+        <p>為高職生設計的資訊安全教育平台 | 守護代碼，從你我做起 💻</p>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>

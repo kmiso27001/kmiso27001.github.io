@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="專為高職生設計的資訊安全教學網站，深入解析 Clickjacking 點擊劫持漏洞。">
+    <title>Clickjacking 點擊劫持 完全解析</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Fira+Code:wght@400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="background-effects">
+        <div class="glow-orb orb-1" style="background: radial-gradient(circle, rgba(255,75,75,0.4) 0%, transparent 70%);"></div>
+        <div class="glow-orb orb-2" style="background: radial-gradient(circle, rgba(255,215,0,0.4) 0%, transparent 70%);"></div>
+    </div>
+
+    <header class="hero">
+        <div class="container">
+            <h1 class="glitch" data-text="Clickjacking">Clickjacking</h1>
+            <p class="subtitle">使用者介面紅利攻擊：眼見不一定為憑 (實戰篇)</p>
+        </div>
+    </header>
+
+    <main class="container">
+        <!-- 返回首頁 -->
+        <div style="margin-bottom: 20px;">
+            <a href="index.html" class="btn" style="text-decoration: none; display: inline-block; padding: 10px 20px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 5px; color: white;">⬅️ 返回首頁</a>
+        </div>
+
+        <!-- ====== 第 6 章：Clickjacking ====== -->
+        <div style="margin: 60px 0; border-top: 2px dashed #ff4b4b; text-align: center; position: relative;">
+            <span style="background: var(--bg-color); padding: 0 20px; font-size: 1.5rem; color: #ff4b4b; position: relative; top: -18px; font-weight: bold;">實戰篇：Missing Anti-clickjacking Header</span>
+        </div>
+
+        <!-- Intro -->
+        <section class="glass-panel" id="clickjacking-intro">
+            <h2><span class="icon">🖱️</span> 什麼是點擊劫持 (Clickjacking)？</h2>
+            <div class="grid-3">
+                <div class="card">
+                    <h3>🖼️ 隱形的陷阱</h3>
+                    <p>駭客將受信任的目標網站（例如您的網路銀行或社群帳號設定頁）透過 <code>&lt;iframe&gt;</code> 嵌入到惡意網站中，並將其設為完全透明。</p>
+                </div>
+                <div class="card warning">
+                    <h3>🎁 偷樑換柱</h3>
+                    <p>駭客在透明的目標網站底下，放了一個極具誘惑力的按鈕（例如「點擊領獎」）。因為目標網站是透明的，受害者以為自己點的是領獎按鈕。</p>
+                </div>
+                <div class="card danger">
+                    <h3>💥 誤觸核彈</h3>
+                    <p>由於透明的目標網站在最上層，滑鼠點擊實際上穿透了誘餌，點到了隱藏的「刪除帳號」或「轉帳」按鈕！這一切都是在您的登入狀態下發生的。</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 實戰演練 -->
+        <section class="glass-panel" id="clickjacking-playground">
+            <h2><span class="icon">🕹️</span> 實戰演練：親自體驗被劫持的感覺</h2>
+            <p class="scenario-desc">下方模擬了一個駭客建立的抽獎網站，該網站巧妙地將「銀行網站的刪除帳號頁面」隱藏並覆蓋在「領取獎品」按鈕的上方。請試著先直接點擊看看，然後再勾選「揭穿魔法」觀察駭客是怎麼做到的！</p>
+            
+            <div style="text-align: center; margin-bottom: 25px; padding: 15px; background: rgba(255,255,255,0.05); border-radius: 12px; display: inline-block;">
+                <label style="cursor: pointer; font-size: 1.2rem; font-weight: bold; color: #fff; display: flex; align-items: center; justify-content: center; gap: 10px;">
+                    <input type="checkbox" id="toggle-opacity" style="transform: scale(1.5);">
+                    👁️ 揭穿駭客魔法 (顯示透明的目標網站)
+                </label>
+            </div>
+
+            <div class="scenario-grid">
+                <!-- Clickjacking Vulnerable -->
+                <div class="scenario-card attack">
+                    <div class="card-header" style="background: rgba(255, 75, 75, 0.2);">❌ 測試危險配置 (無安全標頭防護)</div>
+                    <div class="card-body" style="position: relative; height: 300px; display: flex; justify-content: center; align-items: center; background: #111; overflow: hidden; border-radius: 8px;">
+                        <!-- 駭客的誘餌內容 -->
+                        <div style="text-align: center;">
+                            <h3 style="color: gold; margin-bottom: 20px; text-shadow: 0 0 10px rgba(255,215,0,0.5);">🎉 恭喜您成為第 100 萬位訪客！ 🎉</h3>
+                            <button style="padding: 20px 40px; font-size: 1.5rem; background: linear-gradient(45deg, #ffb84d, #ff4b4b); color: #fff; border: none; border-radius: 50px; cursor: pointer; box-shadow: 0 0 20px rgba(255,75,75,0.5); font-weight: bold;" onclick="alert('【安全】這才是真正的誘餌按鈕！如果你看到這個，代表劫持失敗！');">🎁 點擊領取最新 iPhone 15!</button>
+                        </div>
+                        
+                        <!-- 隱藏的目標網站 iframe (透明) -->
+                        <iframe class="cj-iframe" src="clickjacking_vulnerable.php" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none; opacity: 0.001; z-index: 10;"></iframe>
+                    </div>
+                    <p style="font-size: 0.85em; color: #ff4b4b; margin-top: 15px; text-align: center;">▲ 因為目標網站缺乏防護，被成功嵌套。點擊將誤觸「刪除帳號」！</p>
+                </div>
+
+                <!-- Clickjacking Secure -->
+                <div class="scenario-card normal">
+                    <div class="card-header" style="background: rgba(77, 255, 184, 0.2);">✅ 測試安全配置 (有 X-Frame-Options)</div>
+                    <div class="card-body" style="position: relative; height: 300px; display: flex; justify-content: center; align-items: center; background: #111; overflow: hidden; border-radius: 8px;">
+                        <!-- 駭客的誘餌內容 -->
+                        <div style="text-align: center;">
+                            <h3 style="color: gold; margin-bottom: 20px; text-shadow: 0 0 10px rgba(255,215,0,0.5);">🎉 恭喜您成為第 100 萬位訪客！ 🎉</h3>
+                            <button style="padding: 20px 40px; font-size: 1.5rem; background: linear-gradient(45deg, #ffb84d, #ff4b4b); color: #fff; border: none; border-radius: 50px; cursor: pointer; box-shadow: 0 0 20px rgba(255,75,75,0.5); font-weight: bold;" onclick="alert('【安全】恭喜！由於上方沒有被覆蓋惡意 iframe，您只點擊到了單純的按鈕，沒有誤觸敏感操作。');">🎁 點擊領取最新 iPhone 15!</button>
+                        </div>
+                        
+                        <!-- 隱藏的目標網站 iframe (透明) -->
+                        <!-- 因為目標網站有 X-Frame-Options: DENY，這個 iframe 會載入失敗，不會遮擋下方按鈕 -->
+                        <iframe class="cj-iframe" src="clickjacking_secure.php" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none; opacity: 0.001; z-index: 10;"></iframe>
+                    </div>
+                    <p style="font-size: 0.85em; color: #4dffb8; margin-top: 15px; text-align: center;">▲ 目標網站使用了安全標頭，瀏覽器直接拒絕載入 iframe，攻擊失效！</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 程式碼對比 -->
+        <section class="glass-panel" id="clickjacking-code-comparison">
+            <h2><span class="icon">⚖️</span> 程式碼大對決：Clickjacking 防禦</h2>
+            <div class="comparison-grid">
+                <!-- Vulnerable -->
+                <div class="code-window vulnerable">
+                    <div class="window-header">
+                        <span class="dot red"></span>
+                        <span class="dot yellow"></span>
+                        <span class="dot green"></span>
+                        <span class="filename">clickjacking_vulnerable.php (無防護 ❌)</span>
+                    </div>
+                    <div class="window-body">
+<pre><code class="language-php">
+&lt;?php
+session_start();
+<span class="comment">// 🚨 危險：沒有設定任何反框架化的 HTTP 標頭</span>
+
+if (!isset($_SESSION['user_id'])) {
+    die("請先登入");
+}
+?&gt;
+
+&lt;!-- 駭客可以任意在惡意網站使用 iframe 嵌入此頁面 --&gt;
+&lt;iframe src="vulnerable.php" style="opacity: 0"&gt;&lt;/iframe&gt;
+</code></pre>
+                    </div>
+                </div>
+
+                <!-- Secure -->
+                <div class="code-window secure">
+                    <div class="window-header">
+                        <span class="dot red"></span>
+                        <span class="dot yellow"></span>
+                        <span class="dot green"></span>
+                        <span class="filename">clickjacking_secure.php (安全標頭 ✅)</span>
+                    </div>
+                    <div class="window-body">
+<pre><code class="language-php">
+&lt;?php
+session_start();
+
+<span class="comment">// ✨ 安全做法 A：使用傳統的 X-Frame-Options 標頭</span>
+<span class="highlight-line-safe">header("X-Frame-Options: DENY");</span>
+
+<span class="comment">// ✨ 安全做法 B：使用現代的 Content Security Policy 標頭</span>
+<span class="highlight-line-safe">header("Content-Security-Policy: frame-ancestors 'none';");</span>
+?&gt;
+
+&lt;!-- 瀏覽器會嚴格遵守標頭指示，拒絕在 iframe 中載入此頁面 --&gt;
+</code></pre>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 開發建議 -->
+        <section class="glass-panel" id="clickjacking-recommendations">
+            <h2><span class="icon">🛡️</span> 開發建議：防範點擊劫持</h2>
+            <div class="rec-grid">
+                <div class="rec-card">
+                    <div class="rec-icon">🚫</div>
+                    <h3>優先採用 DENY 策略</h3>
+                    <p>對於包含敏感操作（轉帳、刪除、修改密碼）的頁面，應強制設定 X-Frame-Options 為 <code>DENY</code>，完全禁止被嵌入。</p>
+                </div>
+                
+                <div class="rec-card">
+                    <div class="rec-icon">⚙️</div>
+                    <h3>統一標頭管理</h3>
+                    <p>建議在 Web 伺服器層級（如 Apache 的 .htaccess 或 Nginx.conf）全域配置此標頭，確保開發者不會因為遺漏個別 PHP 檔案而產生漏洞。</p>
+                </div>
+
+                <div class="rec-card">
+                    <div class="rec-icon">🗑️</div>
+                    <h3>淘汰舊式 JS 腳本</h3>
+                    <p>過去常使用 JavaScript (如 <code>if (top != self) ...</code>) 來檢測嵌套，但這容易被駭客繞過，應改為依賴標準的 HTTP 安全標頭。</p>
+                </div>
+
+                <div class="rec-card">
+                    <div class="rec-icon">🛡️</div>
+                    <h3>縱深防禦機制</h3>
+                    <p>點擊劫持常與 CSRF 結合使用，因此應同時實施 Anti-CSRF Tokens！即使受害者被騙點擊，也會因為請求中沒有正確的 Token 而導致失敗。</p>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer>
+        <p>為高職生設計的資訊安全教育平台 | 守護代碼，從你我做起 💻</p>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>

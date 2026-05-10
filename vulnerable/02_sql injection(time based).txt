@@ -1,0 +1,51 @@
+背景資訊
+1. 已經完成上一階段的互動(sql injection)
+2. 這次要實作的是 Time based 的 SQL Injection
+3. 參考資料如下
+
+SQL Injection - MySQL (Time Based)
+1. 簡介 (Introduction)
+(1) 這是一種更隱蔽、更耗時的 盲注 (Blind SQL Injection) 技術。
+(2) 當應用程式-配置得很安全，不會在前端顯示錯誤訊息（Error-
+based），也不會因為查詢成功或失敗而改變頁面內容（Boolean-
+based）時，駭客就會改用時間盲注
+(3) (Time-Based)。其核心原理是：利用 SQL 的時間延遲函數，根據網
+頁「回應速度」的快慢，來推斷資料庫中的資訊。
+2. 攻擊範例
+範例場景：猜測資料庫名稱的第一個字母，假設駭客想知道資料庫名稱的
+第一個字母是不是 'a'：
+AND (SELECT IF(SUBSTRING(database(),1,1)='a', SLEEP(5), 1))
+資料庫執行的邏輯：
+SUBSTRING(database(),1,1)='a'：檢查資料庫名稱的第一個字。如果是
+'a'：執行 SLEEP(5)。伺服器會在 5 秒後才把網頁傳回給駭客。如果不是
+'a'：執行 1（立即回傳）。伺服器會秒回。 駭客的判斷：如果我等了 5
+秒才看到網頁 $\rightarrow$ 猜對了，第一個字是 'a'。如果網頁瞬間出
+現 $\rightarrow$ 猜錯了，換下一個字母 'b' 繼續試。
+3. 危險寫法（容易受 Time-based 攻擊）
+$id = $_GET['id'];
+$sql = "SELECT name FROM products WHERE id = $id";
+$result = $conn->query($sql);
+4. 安全寫法（使用 PDO 預處理）
+$id = $_GET['id'];
+$stmt = $pdo->prepare("SELECT name FROM products WHERE id = ?");
+$stmt->execute([$id]); //輸入包含 SLEEP()，也會被當作純字串處理
+5. 開發建議：
+(1) 設定請求超時:在網頁伺服器或 PHP 層級設定合理的 Timeout，防止資
+料庫被長延遲攻擊掛起。
+(2) 監控慢查詢 (Slow Logs)：如果發現大量帶有 SLEEP 或異常延遲的 SQL
+記錄，通常就是受攻擊的徵兆。
+
+須完成的工作
+產生一個網站,增加一個time based 的sql injection的互動網頁,當然,index.html也要做對應的修改
+以下是我期望的結果
+1. 網站外觀要和上一階段一樣有科技感
+2. 不論是危險寫法或安全寫法
+
+針對SQLInjection - MySQL (Time Based)的攻擊範例,我認為不夠好,
+我的sql server還有一個資料庫名稱是由四個英文小寫字母組成
+請用盲注的方式猜出這個資料庫名稱當作範例
+
+學生反應頁面過長,希望sql injection和time based sql injection做成不同頁面
+先建立一個主頁index.html,然後再建立兩個子頁面
+index_sqli.html 和 index_time_sqli.html,然後在index.html中添加兩個按鈕,分別鏈接到 index_sqli.html 和 index_time_sqli.html
+

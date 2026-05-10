@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="專為高職生設計的資訊安全教學網站，深入解析 Server 標頭特徵外洩漏洞。">
+    <title>Server Header 環境特徵外洩 完全解析</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Fira+Code:wght@400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="background-effects">
+        <div class="glow-orb orb-1" style="background: radial-gradient(circle, rgba(255,184,77,0.4) 0%, transparent 70%);"></div>
+        <div class="glow-orb orb-2" style="background: radial-gradient(circle, rgba(77,255,184,0.4) 0%, transparent 70%);"></div>
+    </div>
+
+    <header class="hero">
+        <div class="container">
+            <h1 class="glitch" data-text="Server Fingerprinting">Server Header Leak</h1>
+            <p class="subtitle">環境特徵外洩：別把家裡的設計圖直接送給小偷！</p>
+        </div>
+    </header>
+
+    <main class="container">
+        <!-- 返回首頁 -->
+        <div style="margin-bottom: 20px;">
+            <a href="index.html" class="btn" style="text-decoration: none; display: inline-block; padding: 10px 20px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 5px; color: white;">⬅️ 返回首頁</a>
+        </div>
+
+        <!-- ====== 第 12 章：Server Header ====== -->
+        <div style="margin: 60px 0; border-top: 2px dashed #ffb84d; text-align: center; position: relative;">
+            <span style="background: var(--bg-color); padding: 0 20px; font-size: 1.5rem; color: #ffb84d; position: relative; top: -18px; font-weight: bold;">實戰篇：環境特徵外洩</span>
+        </div>
+
+        <!-- Intro -->
+        <section class="glass-panel" id="server-intro">
+            <h2><span class="icon">🖥️</span> 什麼是 Server 標頭外洩？</h2>
+            <div class="grid-3">
+                <div class="card">
+                    <h3>🔍 技術清單大公開</h3>
+                    <p>Web 伺服器 (如 Apache 或 Nginx) 預設會在 HTTP 響應的 <code>Server</code> 標頭中，附上自身軟體名稱、詳細版本號、甚至作業系統和外掛模組的資訊。</p>
+                </div>
+                <div class="card warning">
+                    <h3>⚠️ 一鍵攻擊腳本</h3>
+                    <p>駭客只需發送一個請求，就能得知伺服器使用的精確版本 (如 Apache 2.2.15)。接著就能在 Exploit-DB 上尋找該版本專屬的「一鍵攻擊腳本 (One-Click Exploits)」直接打擊。</p>
+                </div>
+                <div class="card danger">
+                    <h3>🛡️ 最小資訊揭露</h3>
+                    <p>基於資安原則，系統不應回傳任何對正常用戶無益、但對攻擊者有利的技術細節。隱藏版本號雖然不能修補漏洞，但能大幅增加駭客掃描與測試的成本。</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 實戰演練 -->
+        <section class="glass-panel" id="server-playground">
+            <h2><span class="icon">🕹️</span> 實戰演練：自動化掃描器模擬</h2>
+            <p class="scenario-desc">下方模擬駭客使用掃描工具對伺服器發送請求。請點擊「😈 啟動掃描器」來觀察伺服器回傳的 Server 標頭，看看預設配置與安全配置的差異！</p>
+            
+            <div class="scenario-grid">
+                <!-- Server Vulnerable -->
+                <div class="scenario-card attack">
+                    <div class="card-header" style="background: rgba(255, 75, 75, 0.2);">❌ 測試危險配置 (預設暴露所有細節)</div>
+                    <div class="card-body">
+                        <div style="background: #222; padding: 10px; border-radius: 8px 8px 0 0; border: 1px solid #444; border-bottom: none; display: flex; align-items: center;">
+                            <span style="color: #888; margin-right: 10px;">> curl -I https://shop.com/api</span>
+                        </div>
+                        <div id="result-server-vuln" style="min-height: 150px; background: #111; padding: 15px; border: 1px solid #444; border-radius: 0 0 8px 8px; color: #fff;">
+                            <span style="color: #666;">等待掃描...</span>
+                        </div>
+                        
+                        <button id="btn-server-attack" class="btn danger-btn" style="width: 100%; margin-top: 15px; padding: 10px; font-size: 1.1em; cursor: pointer; border-radius: 6px; border: none; font-weight: bold; box-shadow: 0 0 10px rgba(255,75,75,0.5);">😈 啟動掃描器獲取 Headers</button>
+                    </div>
+                </div>
+
+                <!-- Server Secure -->
+                <div class="scenario-card normal">
+                    <div class="card-header" style="background: rgba(77, 255, 184, 0.2);">✅ 測試安全配置 (僅顯示產品名稱)</div>
+                    <div class="card-body">
+                        <div style="background: #222; padding: 10px; border-radius: 8px 8px 0 0; border: 1px solid #444; border-bottom: none; display: flex; align-items: center;">
+                            <span style="color: #888; margin-right: 10px;">> curl -I https://shop.com/api</span>
+                        </div>
+                        <div id="result-server-secure" style="min-height: 150px; background: #111; padding: 15px; border: 1px solid #444; border-radius: 0 0 8px 8px; color: #fff;">
+                            <span style="color: #666;">等待掃描...</span>
+                        </div>
+                        
+                        <button id="btn-server-secure-attack" class="btn warning-btn" style="width: 100%; margin-top: 15px; padding: 10px; font-size: 1.1em; cursor: pointer; border-radius: 6px; border: none; font-weight: bold; box-shadow: 0 0 10px rgba(255,184,77,0.5);">😈 啟動掃描器獲取 Headers</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 程式碼對比 -->
+        <section class="glass-panel" id="server-code-comparison">
+            <h2><span class="icon">⚖️</span> 伺服器配置大對決：如何收斂資訊？</h2>
+            <div class="comparison-grid">
+                <!-- Vulnerable -->
+                <div class="code-window vulnerable">
+                    <div class="window-header">
+                        <span class="dot red"></span>
+                        <span class="dot yellow"></span>
+                        <span class="dot green"></span>
+                        <span class="filename">Apache / Nginx (危險的預設配置 ❌)</span>
+                    </div>
+                    <div class="window-body">
+<pre><code class="language-apache">
+<span class="comment"># Apache (httpd.conf)</span>
+<span class="comment"># 預設通常為 Full 或 OS，會顯示版本、OS 與模組資訊</span>
+<span class="highlight-line-danger">ServerTokens Full</span>
+<span class="highlight-line-danger">ServerSignature On</span>
+
+<span class="comment"># Nginx (nginx.conf)</span>
+<span class="comment"># 預設為開啟，會在 Header 與錯誤頁面顯示精確版本號</span>
+<span class="highlight-line-danger">server_tokens on;</span>
+</code></pre>
+                    </div>
+                </div>
+
+                <!-- Secure -->
+                <div class="code-window secure">
+                    <div class="window-header">
+                        <span class="dot red"></span>
+                        <span class="dot yellow"></span>
+                        <span class="dot green"></span>
+                        <span class="filename">Apache / Nginx (安全的防護方式 ✅)</span>
+                    </div>
+                    <div class="window-body">
+<pre><code class="language-apache">
+<span class="comment"># ✨ Apache (httpd.conf)</span>
+<span class="comment"># 僅顯示軟體名稱 "Apache"，隱藏版本號與作業系統</span>
+<span class="highlight-line-safe">ServerTokens Prod</span>
+<span class="highlight-line-safe">ServerSignature Off</span>
+
+<span class="comment"># ✨ Nginx (nginx.conf)</span>
+<span class="comment"># 隱藏 Nginx 的具體版本號</span>
+<span class="highlight-line-safe">server_tokens off;</span>
+</code></pre>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 開發建議 -->
+        <section class="glass-panel" id="server-recommendations">
+            <h2><span class="icon">🛡️</span> 維運與治理建議：消除系統指紋</h2>
+            <div class="rec-grid">
+                <div class="rec-card">
+                    <div class="rec-icon">📉</div>
+                    <h3>遵循最小資訊揭露原則</h3>
+                    <p>伺服器不應回傳任何對正常用戶無益的技術細節。將 <code>ServerTokens</code> 設為 <code>Prod</code> 是伺服器上線前資安稽核中最基本的要求。</p>
+                </div>
+                
+                <div class="rec-card">
+                    <div class="rec-icon">🎭</div>
+                    <h3>進階偽裝 (WAF / Reverse Proxy)</h3>
+                    <p>在進階架構中，可以使用負載平衡器或反向代理 (如 Nginx) 將 Server 標頭重寫為不具名內容 (例如 <code>Server: WebServer</code>)，徹底消除特徵。</p>
+                </div>
+
+                <div class="rec-card">
+                    <div class="rec-icon">🧹</div>
+                    <h3>錯誤頁面清理</h3>
+                    <p>除了 Header 之外，還要確保 404 或 500 錯誤頁面是由應用程式自定義的，避免系統預設錯誤頁面的底部洩漏伺服器的技術簽名。</p>
+                </div>
+
+                <div class="rec-card">
+                    <div class="rec-icon">🤖</div>
+                    <h3>自動化配置檢核 (IaC)</h3>
+                    <p>將伺服器配置納入「基礎架構即代碼 (Infrastructure as Code)」的審核流程中，使用自動化指令碼檢查 <code>server_tokens</code> 是否已確實關閉。</p>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer>
+        <p>為高職生設計的資訊安全教育平台 | 守護代碼，從你我做起 💻</p>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>

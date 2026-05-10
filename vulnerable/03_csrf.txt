@@ -1,0 +1,91 @@
+背景資訊
+1. 已經完成上兩階段的互動(sql injection) 和 Time based 的 SQL Injection
+2. 這次要實作的是 Absence of Anti-CSRF tokens
+3. 參考資料如下
+
+Absence of Anti-CSRF tokens
+1. 簡介 (Introduction)
+(1) 跨站請求偽造 (Cross-Site Request Forgery, CSRF) 是一種迫使已驗
+證用戶在當前 Web 應用程式上執行非自願操作的攻擊手法。
+(2) 其核心問題在於瀏覽器在發送請求時，會自動附帶與該域名相關的
+Cookie（如 Session ID）。
+(3) 若 Web 表單或 API 接口欠缺 Anti-CSRF Token（防護令牌），攻擊者即
+可利用社交工程手段引導受害者訪問惡意網站，藉由受害者的登入狀態
+發送偽造請求。由於伺服器僅依賴 Cookie 進行身份驗證，無法區分該
+請求是由用戶自主觸發，還是由第三方網站惡意偽造。
+2. 範例 (Example Scenario)
+假設某銀行網站的轉帳功能僅依賴 Session Cookie，且沒有 Token 保護：
+(1) 正常請求： 用戶登入 bank.com 後，點擊轉帳，瀏覽器發送 POST
+/transfer?to=userB&amount=1000。
+(2) 攻擊誘餌：攻擊者建構一個惡意網頁，內含隱藏表單或 JavaScript 自
+動執行請求：
+<form id="attack" action="https://bank.com/transfer"
+method="POST">
+<input type="hidden" name="to" value="attacker" />
+<input type="hidden" name="amount" value="10000" />
+</form>
+<script>document.getElementById('attack').submit();</script>
+(3) 觸發攻擊： 當受害者在同一瀏覽器開啟此惡意網頁時，瀏覽器會自動
+帶上 bank.com 的 Session Cookie，銀行伺服器誤以為是合法操作，導
+致資金被竊。
+3. 危險寫法 (Vulnerable Code - PHP)
+以下是一個典型缺乏 CSRF 防護的 PHP 處理邏輯，僅檢查用戶是否登入：
+// transfer.php
+session_start();
+// 僅驗證 Session，未驗證請求來源的唯一性
+if (isset($_SESSION['user_id'])) {
+$to = $_POST['to'];
+$amount = $_POST['amount'];
+// 執行轉帳邏輯（此處極易受 CSRF 攻擊）
+update_balance($_SESSION['user_id'], $to, $amount);
+echo "轉帳成功！";
+}
+4. 安全寫法 (Secure Code - PHP)
+正確的做法是在表單中加入一個隨機、不可預測且具時效性的 CSRF
+Token：
+(1) 步驟 A：生成並儲存 Token
+session_start();
+if (empty($_SESSION['csrf_token'])) {
+$_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+}
+(2) 步驟 B：在 HTML 表單中嵌入 Token
+<form action="transfer.php" method="POST">
+<input type="hidden" name="csrf_token" value="<?php echo
+$_SESSION['csrf_token']; ?>">
+接收帳號：<input type="text" name="to">
+金額：<input type="text" name="amount">
+<button type="submit">確認轉帳</button>
+</form>
+(3) 步驟 C：伺服器端驗證 Token
+session_start();
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+if (!isset($_POST['csrf_token']) ||
+$_POST['csrf_token'] !== $_SESSION['csrf_token']) {
+die("CSRF 攻擊檢測：無效的請求來源。");
+}
+// 驗證通過，執行後續邏輯
+}
+5. 開發建議 (Development Recommendations)
+從資管與軟體工程角度出發，建議採取以下多層次防禦策略：
+(1) 同步令牌模式 (Synchronizer Token Pattern)： 這是最標準的做
+法，確保每個狀態更改請求（POST/PUT/DELETE）都包含伺服器生成的
+隨機 Token。
+(2) 使用現代框架： 建議開發者使用如 Laravel、Symfony 或 Django 等
+內建 CSRF 防護機制的框架，這些框架會自動處理 Token 的生成與校
+驗。
+(3) SameSite Cookie 屬性： 將 Session Cookie 的屬性設置為
+SameSite=Lax 或 Strict。這能限制瀏覽器在跨站請求時發送
+Cookie，從根本上減少攻擊面。
+(4) 區分請求方法： 嚴格遵守 RESTful 規範，確保 GET 請求僅用於資料
+讀取而不產生副作用（不改變資料庫狀態）。
+(5) 雙重驗證 (Two-Factor Auth)： 對於高風險操作（如修改密碼、大額
+轉帳），除了 Token 之外，應增加簡訊驗證碼或密碼二次確認，作為
+最後一道防線。
+
+須完成的工作
+增加一個Absence of Anti-CSRF tokens的互動網頁,當然,index.html也要做對應的修改
+以下是我期望的結果
+1. 網站外觀要和上一階段一樣有科技感
+2. 不論是危險寫法或安全寫法
+
+

@@ -1,0 +1,87 @@
+背景資訊
+1. 這次要實作的是 Server Leaks Information via "X-Powered-By" HTTP Response
+Header Field(s)
+2. 參考資料如下
+
+Server Leaks Information via "X-Powered-By" HTTP Response
+Header Field(s)
+1. 簡介 (Introduction)
+(1) X-Powered-By 是一種非標準的 HTTP 回應標頭，通常由 Web 伺服器或
+後端語言（如 PHP、ASP.NET）自動生成，用以標示目前網頁背後的技
+術架構。
+(2) 其核心問題在於資訊過度揭露 (Information Disclosure)。該標頭往
+往會包含具體的版本號碼（例如 PHP/7.4.3），這無異於向攻擊者提供
+了一份技術清單。
+(3) 攻擊者可以利用這些精確的版本資訊，在 CVE 漏洞資料庫中快速比對該版本
+是否存在未修補的安全性弱點。這在資安攻擊生命週期中屬於關鍵的「偵察階
+段 (Reconnaissance)」，正確地隱藏此類資訊能有效提升攻擊者的門檻與時間
+成本。
+2. 範例 (Example Scenario)
+(1) 漏洞偵測： 攻擊者使用簡單的網路工具（如 curl -I 或瀏覽器開發
+者工具）查看目標網站的響應。
+(2) 獲取資訊： 伺服器回傳如下標頭：
+HTTP
+HTTP/1.1 200 OK
+Date: Wed, 25 Mar 2026 10:00:00 GMT
+Content-Type: text/html; charset=UTF-8
+X-Powered-By: PHP/5.6.40
+Server: Apache/2.4.6 (CentOS)
+(3) 發動攻擊： 攻擊者發現該站仍在使用已停止維護（EOL）的 PHP 5.6
+版本，隨即搜尋該版本的遠端代碼執行（RCE）漏洞 Payload，並針對
+性地對網站發動攻擊。
+3. 危險寫法 (Vulnerable Configuration)
+(1) 在 PHP 的預設配置中，expose_php 選項通常是開啟的，這會自動在
+每個 HTTP 回應中加入版本資訊。
+➢ php.ini 配置：
+expose_php = On
+➢ 或者在 PHP 代碼中不經意地自定義標頭：
+<?php
+// 此舉會手動暴露後端技術棧
+header("X-Powered-By: My-Custom-PHP-Framework-v1.0");
+?>
+4. 安全寫法 (Secure Mitigation)
+最根本的解決方案是在系統配置層級將其完全禁用。
+(1) 方法 A：修改 php.ini (最推薦)
+將 expose_php 設為 Off。修改後需重新啟動 Web 伺服器
+; php.ini
+expose_php = Off
+(2) 方法 B：在 PHP 腳本中動態移除
+若無法修改伺服器設定，可在程式進入點嘗試移除（但效果可能因
+伺服器環境而異）：
+<?php
+// 嘗試在運行時移除該標頭
+header_remove('X-Powered-By');
+?>
+(3) 方法 C：透過 Web 伺服器過濾 (Apache/Nginx)
+在 Apache 的 .htaccess 中：
+Apache
+Header always unset X-Powered-By
+在 Nginx 的配置文件中：
+Nginx
+fastcgi_hide_header X-Powered-By;
+proxy_hide_header X-Powered-By;
+5. 開發建議 (Development Recommendations)
+與系統防禦的角度出發，建議採取以下隱蔽策略：
+(1) 循「模糊化 (Obfuscation)」原則： 雖然隱藏資訊並非消除漏洞，但
+它能落實資安縱深防禦中的「隱晦式安全 (Security through
+obscurity)」，減少被自動化掃描器鎖定的機率。
+(2) 同步禁用 Server 標頭： 除了 PHP 版本，Web 伺服器的版本資訊
+（如 Server: Apache/2.4.41 (Ubuntu)）也應一併關閉（Apache 設
+置 ServerTokens Prod 及 ServerSignature Off）。
+(3) 定期更新版本： 資訊隱藏只是第一步，核心仍應保持 PHP 版本處於
+受支援的生命週期（Active Support）內，以確保已修補所有已知漏
+洞。
+(4) 自定義標頭偽裝 (進階)： 部分資安專家建議將 X-Powered-By 修改
+為無關內容（如 X-Powered-By: SuperServer）以誤導攻擊者的判
+斷，但最穩健的做法仍是直接移除。
+(5) 資安稽核： 使用 OWASP ZAP 或 Nessus 等工具進行定期掃描，確認
+伺服器響應中不再洩漏任何具體的環境架構資訊。
+
+須完成的工作
+增加一個Server Leaks Information via "X-Powered-By" HTTP Response
+Header Field(s)的互動網頁,當然,index.html也要做對應的修改
+以下是我期望的結果
+1. 網站外觀要和上一階段一樣有科技感
+2. 不論是危險寫法或安全寫法
+
+

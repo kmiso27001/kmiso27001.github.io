@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="專為高職生設計的 SQL Injection (資料隱碼攻擊) 與 CSRF 教學網站，深入解析 Vulnerable Code 與 Secure Code 的差異。">
+    <title>CSRF 跨站請求偽造 完全解析</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Fira+Code:wght@400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="background-effects">
+        <div class="glow-orb orb-1" style="background: radial-gradient(circle, rgba(255,75,75,0.4) 0%, transparent 70%);"></div>
+        <div class="glow-orb orb-2" style="background: radial-gradient(circle, rgba(77,255,184,0.4) 0%, transparent 70%);"></div>
+    </div>
+
+    <header class="hero">
+        <div class="container">
+            <h1 class="glitch" data-text="CSRF Attack">CSRF Attack</h1>
+            <p class="subtitle">跨站請求偽造：駭客如何利用您的身分 (實戰篇)</p>
+        </div>
+    </header>
+
+    <main class="container">
+        <!-- 返回首頁 -->
+        <div style="margin-bottom: 20px;">
+            <a href="index.html" class="btn" style="text-decoration: none; display: inline-block; padding: 10px 20px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 5px; color: white;">⬅️ 返回首頁</a>
+        </div>
+
+        <!-- ====== 第 3 章：CSRF ====== -->
+        <div style="margin: 60px 0; border-top: 2px dashed #ff4b4b; text-align: center; position: relative;">
+            <span style="background: var(--bg-color); padding: 0 20px; font-size: 1.5rem; color: #ff4b4b; position: relative; top: -18px; font-weight: bold;">實戰篇：Absence of Anti-CSRF tokens</span>
+        </div>
+
+        <!-- Intro -->
+        <section class="glass-panel" id="csrf-intro">
+            <h2><span class="icon">🎭</span> 什麼是跨站請求偽造 (CSRF)？</h2>
+            <div class="grid-3">
+                <div class="card">
+                    <h3>👥 借刀殺人</h3>
+                    <p>CSRF 是一種迫使已驗證用戶在當前 Web 應用程式上執行非自願操作的攻擊手法。駭客利用您瀏覽器中已登入的 Session，借您的手發送請求。</p>
+                </div>
+                <div class="card warning">
+                    <h3>🍪 核心問題：Cookie</h3>
+                    <p>瀏覽器發送請求時，會自動附帶與該域名相關的 Cookie（如 Session ID）。伺服器僅依賴 Cookie 驗證，無法區分請求是由用戶自主觸發，還是由第三方網站惡意偽造。</p>
+                </div>
+                <div class="card danger">
+                    <h3>🎯 攻擊範例</h3>
+                    <p>攻擊者建構惡意網頁，內含隱藏表單：<br>
+                    <code>&lt;form action="bank.com/transfer" method="POST"&gt;</code><br>
+                    當受害者開啟惡意網頁，表單自動送出，瀏覽器帶上 Session Cookie，銀行誤以為是合法轉帳。</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 實戰演練 -->
+        <section class="glass-panel" id="csrf-playground">
+            <h2><span class="icon">🕹️</span> 實戰演練：親自體驗 CSRF 攻擊</h2>
+            <p class="scenario-desc">下方是一個模擬的銀行轉帳系統，假設您已經登入。請先嘗試「正常發送轉帳」，然後再點擊「模擬駭客網站」，看看在沒有防護的情況下會發生什麼事！</p>
+            
+            <div class="scenario-grid">
+                <!-- CSRF Vulnerable -->
+                <div class="scenario-card attack">
+                    <div class="card-header" style="background: rgba(255, 75, 75, 0.2);">❌ 測試危險寫法 (csrf_transfer.php)</div>
+                    <div class="card-body">
+                        <form id="form-csrf-vulnerable" class="demo-form">
+                            <div class="input-group">
+                                <label>轉出對象 (To)：</label> 
+                                <input type="text" name="to" class="demo-input" placeholder="對象帳號" value="friend_account" required>
+                            </div>
+                            <div class="input-group">
+                                <label>轉出金額 (Amount)：</label> 
+                                <input type="number" name="amount" class="demo-input" placeholder="金額" value="1000" required>
+                            </div>
+                            <button type="submit" class="btn success-btn" style="width: 100%; margin-top: 10px; padding: 10px; font-size: 1.1em; cursor: pointer; border-radius: 6px; border: none; background: #555; color: white; font-weight: bold;">🧑‍💻 正常發送轉帳</button>
+                        </form>
+                        
+                        <div style="margin-top: 20px; border-top: 1px dashed #666; padding-top: 15px;">
+                            <p style="font-size: 0.9em; color: #ffb84d; margin-bottom: 10px;">👇 點擊下方按鈕，模擬受害者訪問了駭客製作的惡意網站，該網站悄悄向此銀行發送了偽造的 POST 請求：</p>
+                            <button id="btn-csrf-attack" class="btn danger-btn" style="width: 100%; padding: 10px; font-size: 1.1em; cursor: pointer; border-radius: 6px; border: none; background: #ff4b4b; color: white; font-weight: bold; box-shadow: 0 0 10px rgba(255,75,75,0.5);">👿 模擬受害者訪問惡意網站</button>
+                        </div>
+
+                        <div class="result-box" id="result-csrf-vulnerable" style="margin-top: 15px; padding: 15px; background: #000; border-radius: 8px; font-family: var(--font-code); font-size: 0.9em; min-height: 80px;">等待測試...</div>
+                    </div>
+                </div>
+
+                <!-- CSRF Secure -->
+                <div class="scenario-card normal">
+                    <div class="card-header" style="background: rgba(77, 255, 184, 0.2);">✅ 測試安全寫法 (secure_csrf_transfer.php)</div>
+                    <div class="card-body">
+                        <form id="form-csrf-secure" class="demo-form">
+                            <!-- Token 由 JS 自動抓取並填入 -->
+                            <input type="hidden" name="csrf_token" id="secure-csrf-token" value="">
+                            
+                            <div class="input-group">
+                                <label>轉出對象 (To)：</label> 
+                                <input type="text" name="to" class="demo-input" placeholder="對象帳號" value="friend_account" required>
+                            </div>
+                            <div class="input-group">
+                                <label>轉出金額 (Amount)：</label> 
+                                <input type="number" name="amount" class="demo-input" placeholder="金額" value="1000" required>
+                            </div>
+                            <button type="submit" class="btn success-btn" style="width: 100%; margin-top: 10px; padding: 10px; font-size: 1.1em; cursor: pointer; border-radius: 6px; border: none; background: #45a29e; color: white; font-weight: bold;">🧑‍💻 正常發送轉帳 (帶 Token)</button>
+                        </form>
+                        
+                        <div style="margin-top: 20px; border-top: 1px dashed #666; padding-top: 15px;">
+                            <p style="font-size: 0.9em; color: #ffb84d; margin-bottom: 10px;">👇 惡意網站無法取得隨機的 CSRF Token，只能發送不帶 Token (或帶錯誤 Token) 的偽造請求：</p>
+                            <button id="btn-csrf-secure-attack" class="btn warning-btn" style="width: 100%; padding: 10px; font-size: 1.1em; cursor: pointer; border-radius: 6px; border: none; background: #ffb84d; color: black; font-weight: bold; box-shadow: 0 0 10px rgba(255,184,77,0.5);">👿 模擬受害者訪問惡意網站</button>
+                        </div>
+
+                        <div class="result-box" id="result-csrf-secure" style="margin-top: 15px; padding: 15px; background: #000; border-radius: 8px; font-family: var(--font-code); font-size: 0.9em; min-height: 80px;">等待測試...</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 程式碼對比 -->
+        <section class="glass-panel" id="csrf-code-comparison">
+            <h2><span class="icon">⚖️</span> 程式碼大對決：CSRF 防禦</h2>
+            <div class="comparison-grid">
+                <!-- Vulnerable -->
+                <div class="code-window vulnerable">
+                    <div class="window-header">
+                        <span class="dot red"></span>
+                        <span class="dot yellow"></span>
+                        <span class="dot green"></span>
+                        <span class="filename">csrf_transfer.php (未驗證來源 ❌)</span>
+                    </div>
+                    <div class="window-body">
+<pre><code class="language-php">
+session_start();
+<span class="comment">// 🚨 危險：僅驗證 Session，未驗證請求來源的唯一性</span>
+<span class="highlight-line-danger">if (isset($_SESSION['user_id'])) {</span>
+    $to = $_POST['to'];
+    $amount = $_POST['amount'];
+    
+    <span class="comment">// 執行轉帳邏輯（此處極易受 CSRF 攻擊）</span>
+    update_balance($_SESSION['user_id'], $to, $amount);
+    echo "轉帳成功！";
+}
+</code></pre>
+                    </div>
+                </div>
+
+                <!-- Secure -->
+                <div class="code-window secure">
+                    <div class="window-header">
+                        <span class="dot red"></span>
+                        <span class="dot yellow"></span>
+                        <span class="dot green"></span>
+                        <span class="filename">secure_csrf_transfer.php (加入防護令牌 ✅)</span>
+                    </div>
+                    <div class="window-body">
+<pre><code class="language-php">
+session_start();
+<span class="comment">// 步驟 A：生成並儲存 Token</span>
+if (empty($_SESSION['csrf_token'])) {
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+}
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    <span class="comment">// ✨ 安全：伺服器端驗證 Token</span>
+<span class="highlight-line-safe">    if (!isset($_POST['csrf_token']) || 
+        $_POST['csrf_token'] !== $_SESSION['csrf_token']) {</span>
+        die("CSRF 攻擊檢測：無效的請求來源。");
+    }
+    <span class="comment">// 驗證通過，執行轉帳</span>
+}
+</code></pre>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 開發建議 -->
+        <section class="glass-panel" id="csrf-recommendations">
+            <h2><span class="icon">🛡️</span> 防禦之道：多層次防禦策略</h2>
+            <div class="rec-grid">
+                <div class="rec-card">
+                    <div class="rec-icon">🔑</div>
+                    <h3>同步令牌 (Anti-CSRF Token)</h3>
+                    <p>確保每個狀態更改請求（POST/PUT/DELETE）都包含伺服器生成的隨機、不可預測 Token。</p>
+                </div>
+                
+                <div class="rec-card">
+                    <div class="rec-icon">🍪</div>
+                    <h3>SameSite Cookie 屬性</h3>
+                    <p>將 Session Cookie 屬性設為 <code>SameSite=Lax</code> 或 <code>Strict</code>。限制瀏覽器在跨站請求時發送 Cookie。</p>
+                </div>
+
+                <div class="rec-card">
+                    <div class="rec-icon">🛠️</div>
+                    <h3>使用現代框架</h3>
+                    <p>如 Laravel、Django 等內建 CSRF 防護機制的框架，這些框架會自動處理 Token 的生成與校驗。</p>
+                </div>
+
+                <div class="rec-card">
+                    <div class="rec-icon">📱</div>
+                    <h3>雙重驗證 (2FA)</h3>
+                    <p>對於高風險操作（如修改密碼、大額轉帳），增加簡訊驗證碼或密碼二次確認，作為最後一道防線。</p>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer>
+        <p>為高職生設計的資訊安全教育平台 | 守護代碼，從你我做起 💻</p>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="專為高職生設計的 SQL Injection (資料隱碼攻擊) 教學網站，深入解析 Vulnerable Code 與 Secure Code 的差異。">
+    <title>SQL Injection (SQL 資料隱碼攻擊) 完全解析</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Fira+Code:wght@400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="background-effects">
+        <div class="glow-orb orb-1"></div>
+        <div class="glow-orb orb-2"></div>
+    </div>
+
+    <header class="hero">
+        <div class="container">
+            <h1 class="glitch" data-text="Time-Based SQLi">Time-Based SQLi</h1>
+            <p class="subtitle">網站安全頭號公敵：從原理到防禦的實戰指南 (進階篇)</p>
+        </div>
+    </header>
+
+    <main class="container">
+        <!-- 返回首頁 -->
+        <!-- 返回首頁 -->
+        <div style="margin-bottom: 20px;">
+            <a href="index.html" class="btn" style="text-decoration: none; display: inline-block; padding: 10px 20px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 5px; color: white;">⬅️ 返回首頁</a>
+        </div>
+
+        <!-- ====== 第 2 章：Time-Based Blind SQLi ====== -->
+        <div style="margin: 60px 0; border-top: 2px dashed var(--panel-border); text-align: center; position: relative;">
+            <span style="background: var(--bg-color); padding: 0 20px; font-size: 1.5rem; color: var(--text-accent); position: relative; top: -18px; font-weight: bold;">進階篇：時間盲注</span>
+        </div>
+
+        <!-- 6. Time-based 簡介 -->
+        <section class="glass-panel" id="time-intro">
+            <h2><span class="icon">⏱️</span> 什麼是 Time-Based (時間盲注)？</h2>
+            <div class="grid-3">
+                <div class="card">
+                    <h3>👻 隱蔽的攻擊</h3>
+                    <p>這是一種更隱蔽、更耗時的 <strong>盲注 (Blind SQL Injection)</strong> 技術。當前端不顯示錯誤訊息，也不因查詢結果改變畫面時，駭客就會使用此招。</p>
+                </div>
+                <div class="card warning">
+                    <h3>⏳ 核心原理</h3>
+                    <p>利用 SQL 的<strong>時間延遲函數</strong> (如 <code>SLEEP()</code>)，根據網頁「回應速度」的快慢，來推斷資料庫中的隱藏資訊。</p>
+                </div>
+                <div class="card danger">
+                    <h3>🎯 攻擊範例</h3>
+                    <p>假設駭客想知道資料庫名稱的第一個字是否為 'a'：<br>
+                    <code>AND (SELECT IF(SUBSTRING(database(),1,1)='a', SLEEP(5), 1))</code><br>
+                    若等了 5 秒才回應，代表猜對了！若瞬間回應則代表猜錯。</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 7. Time-based 實戰演練 -->
+        <section class="glass-panel" id="time-playground">
+            <h2><span class="icon">🕹️</span> 實戰演練：親自體驗時間盲注</h2>
+            <p class="scenario-desc">下方是一個產品查詢系統。請嘗試發送攻擊字串，並觀察 <strong>請求耗時</strong> 的變化。您可以試著將 <code>SLEEP(3)</code> 改成 <code>SLEEP(5)</code> 看看！</p>
+            
+            <div class="scenario-grid">
+                <!-- Time Vulnerable -->
+                <div class="scenario-card attack">
+                    <div class="card-header" style="background: rgba(255, 75, 75, 0.2);">❌ 測試危險寫法 (time_login.php)</div>
+                    <div class="card-body">
+                        <form id="form-time-vulnerable" class="demo-form">
+                            <div class="input-group">
+                                <label>查詢產品 ID：</label> 
+                                <input type="text" name="id" class="demo-input" placeholder="請輸入 ID" value="1 AND (SELECT IF(1=1, SLEEP(3), 1))" required>
+                            </div>
+                            <button type="submit" class="btn danger-btn" style="width: 100%; margin-top: 10px; padding: 10px; font-size: 1.1em; cursor: pointer; border-radius: 6px; border: none; background: #ff4b4b; color: white; font-weight: bold;">發送查詢 (Vulnerable)</button>
+                        </form>
+                        <div class="time-display" id="time-display-vulnerable" style="margin-top: 15px; font-size: 1.1em; color: var(--warning); font-weight: bold; text-align: center; display: none;">⏳ 請求耗時：<span class="seconds">0.00</span> 秒</div>
+                        <div class="result-box" id="result-time-vulnerable" style="margin-top: 15px; padding: 15px; background: #000; border-radius: 8px; font-family: var(--font-code); font-size: 0.9em; min-height: 80px;">等待測試...</div>
+                    </div>
+                </div>
+
+                <!-- Time Secure -->
+                <div class="scenario-card normal">
+                    <div class="card-header" style="background: rgba(77, 255, 184, 0.2);">✅ 測試安全寫法 (time_secure.php)</div>
+                    <div class="card-body">
+                        <form id="form-time-secure" class="demo-form">
+                            <div class="input-group">
+                                <label>查詢產品 ID：</label> 
+                                <input type="text" name="id" class="demo-input" placeholder="請輸入 ID" value="1 AND (SELECT IF(1=1, SLEEP(3), 1))" required>
+                            </div>
+                            <button type="submit" class="btn success-btn" style="width: 100%; margin-top: 10px; padding: 10px; font-size: 1.1em; cursor: pointer; border-radius: 6px; border: none; background: #45a29e; color: white; font-weight: bold;">發送查詢 (Secure)</button>
+                        </form>
+                        <div class="time-display" id="time-display-secure" style="margin-top: 15px; font-size: 1.1em; color: var(--success); font-weight: bold; text-align: center; display: none;">⏳ 請求耗時：<span class="seconds">0.00</span> 秒</div>
+                        <div class="result-box" id="result-time-secure" style="margin-top: 15px; padding: 15px; background: #000; border-radius: 8px; font-family: var(--font-code); font-size: 0.9em; min-height: 80px;">等待測試...</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 7.5 Hacker Simulator -->
+        <section class="glass-panel" id="hacker-simulator">
+            <h2><span class="icon">🤖</span> 駭客自動盲注模擬器 (Hacker Simulator)</h2>
+            <p class="scenario-desc">手動猜測太慢了！真正的駭客會寫腳本自動猜測。點擊下方按鈕，看腳本如何透過 <code>SLEEP(1)</code> 逐字猜出您的四字元資料庫名稱。</p>
+            
+            <div class="simulator-container" style="background: rgba(0, 0, 0, 0.5); padding: 20px; border-radius: 12px; border: 1px solid var(--text-accent);">
+                <div class="simulator-controls" style="margin-bottom: 20px; text-align: center;">
+                    <button id="btn-start-simulator" class="btn action-btn" style="padding: 12px 25px; font-size: 1.2rem; cursor: pointer; border-radius: 8px; border: none; background: var(--text-accent); color: white; font-weight: bold; width: 100%; max-width: 400px; box-shadow: 0 0 15px rgba(69, 162, 158, 0.5);">🚀 開始自動盲注猜測</button>
+                </div>
+
+                <div class="simulator-status" style="display: flex; justify-content: space-between; font-family: var(--font-code); background: #111; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                    <div>目前測試位置：<span id="sim-position" style="color: var(--warning); font-size: 1.2em; font-weight: bold;">-</span></div>
+                    <div>目前測試字母：<span id="sim-char" style="color: var(--text-highlight); font-size: 1.2em; font-weight: bold;">-</span></div>
+                    <div>單次請求耗時：<span id="sim-time" style="color: var(--success); font-size: 1.2em; font-weight: bold;">0.00 s</span></div>
+                </div>
+
+                <div class="simulator-result" style="text-align: center; margin-top: 20px;">
+                    <h3 style="color: #aaa; margin-bottom: 10px;">破解進度 (資料庫名稱)</h3>
+                    <div class="cracked-word" id="sim-cracked-word" style="font-size: 3rem; font-family: var(--font-code); color: #fff; letter-spacing: 15px; text-shadow: 0 0 10px var(--text-accent);">_ _ _ _</div>
+                </div>
+                
+                <div id="sim-log" style="margin-top: 20px; height: 150px; overflow-y: auto; background: #0a0a0f; padding: 10px; font-family: var(--font-code); font-size: 0.85em; border-left: 3px solid #333; color: #888; text-align: left;">
+                    <!-- 盲注日誌將會輸出在這裡 -->
+                </div>
+            </div>
+        </section>
+
+        <!-- 8. Time-based 程式碼對比 -->
+        <section class="glass-panel" id="time-code-comparison">
+            <h2><span class="icon">⚖️</span> 程式碼大對決：Time-Based 防禦</h2>
+            <div class="comparison-grid">
+                <!-- Vulnerable -->
+                <div class="code-window vulnerable">
+                    <div class="window-header">
+                        <span class="dot red"></span>
+                        <span class="dot yellow"></span>
+                        <span class="dot green"></span>
+                        <span class="filename">time_login.php (容易受延遲攻擊 ❌)</span>
+                    </div>
+                    <div class="window-body">
+<pre><code class="language-php">
+$id = $_POST['id'];
+
+<span class="comment">// 🚨 危險：直接將變數拼接到 SQL 字串中</span>
+<span class="highlight-line-danger">$sql = "SELECT name FROM products WHERE id = $id";</span>
+
+$result = $conn->query($sql);
+</code></pre>
+                    </div>
+                </div>
+
+                <!-- Secure -->
+                <div class="code-window secure">
+                    <div class="window-header">
+                        <span class="dot red"></span>
+                        <span class="dot yellow"></span>
+                        <span class="dot green"></span>
+                        <span class="filename">time_secure.php (使用 PDO 預處理 ✅)</span>
+                    </div>
+                    <div class="window-body">
+<pre><code class="language-php">
+$id = $_POST['id'];
+
+<span class="comment">// ✨ 安全：使用預編譯陳述式，SLEEP() 會被當作純字串</span>
+<span class="highlight-line-safe">$stmt = $pdo->prepare("SELECT name FROM products WHERE id = ?");</span>
+$stmt->execute([$id]);
+</code></pre>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 開發建議 -->
+        <section class="glass-panel" id="time-recommendations">
+            <h2><span class="icon">🛡️</span> 防禦之道：防止時間盲注</h2>
+            <div class="rec-grid">
+                <div class="rec-card">
+                    <div class="rec-icon">⏱️</div>
+                    <h3>設定請求超時 (Timeout)</h3>
+                    <p>在網頁伺服器或 PHP 層級設定合理的 Timeout（例如 30 秒），防止資料庫連線池被駭客以長延遲攻擊掛起，導致正常服務癱瘓。</p>
+                </div>
+                
+                <div class="rec-card">
+                    <div class="rec-icon">📈</div>
+                    <h3>監控慢查詢 (Slow Logs)</h3>
+                    <p>定期檢查資料庫的 Slow Query Logs。如果發現大量帶有 <code>SLEEP()</code> 或異常延遲的 SQL 記錄，通常就是正在遭受盲注攻擊的徵兆。</p>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer>
+        <p>為高職生設計的資訊安全教育平台 | 守護代碼，從你我做起 💻</p>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>

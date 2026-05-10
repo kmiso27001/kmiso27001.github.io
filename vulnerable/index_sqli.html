@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="專為高職生設計的 SQL Injection (資料隱碼攻擊) 教學網站，深入解析 Vulnerable Code 與 Secure Code 的差異。">
+    <title>SQL Injection (SQL 資料隱碼攻擊) 完全解析</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Fira+Code:wght@400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="background-effects">
+        <div class="glow-orb orb-1"></div>
+        <div class="glow-orb orb-2"></div>
+    </div>
+
+    <header class="hero">
+        <div class="container">
+            <h1 class="glitch" data-text="SQL Injection">SQL Injection</h1>
+            <p class="subtitle">網站安全頭號公敵：從原理到防禦的實戰指南 (基礎篇)</p>
+        </div>
+    </header>
+
+    <main class="container">
+        <!-- 返回首頁 -->
+        <div style="margin-bottom: 20px;">
+            <a href="index.html" class="btn" style="text-decoration: none; display: inline-block; padding: 10px 20px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 5px; color: white;">⬅️ 返回首頁</a>
+        </div>
+        <!-- 1. 簡介 -->
+        <section class="glass-panel" id="intro">
+            <h2><span class="icon">🔍</span> 什麼是 SQL Injection？</h2>
+            <div class="grid-3">
+                <div class="card">
+                    <h3>📖 定義</h3>
+                    <p>這是一種發生在應用程式資料層的安全漏洞。當程式未對用戶輸入的資料進行適當過濾或轉義，並將其直接拼接至 SQL 查詢語句中時，攻擊者可藉此改變原有的查詢邏輯。</p>
+                </div>
+                <div class="card warning">
+                    <h3>⚠️ 核心問題</h3>
+                    <p>程式無法區分「<strong>開發者預期的指令</strong>」與「<strong>用戶輸入的惡意資料</strong>」，導致資料庫執行了未經授權的指令。</p>
+                </div>
+                <div class="card danger">
+                    <h3>💥 影響範圍</h3>
+                    <p>攻擊者可藉此繞過身份驗證、竊取敏感資料（如密碼、個資）、篡改或刪除數據，甚至在某些配置下取得伺服器的作業系統控制權。</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 2. 範例 -->
+        <section class="glass-panel" id="scenario">
+            <h2><span class="icon">🎭</span> 攻擊情境：後台登入系統</h2>
+            <p class="scenario-desc">假設有一個簡單的後台登入系統，透過 <code>username</code> 和 <code>password</code> 驗證用戶。</p>
+            
+            <div class="scenario-grid">
+                <div class="scenario-card normal">
+                    <div class="card-header">✅ 正常請求</div>
+                    <div class="card-body">
+                        <div class="input-group">
+                            <label>帳號：</label> <span class="user-input">admin</span>
+                        </div>
+                        <div class="input-group">
+                            <label>密碼：</label> <span class="user-input">password123</span>
+                        </div>
+                        <div class="code-block">
+                            <div class="code-title">生成的 SQL 語句</div>
+                            <code>SELECT * FROM users WHERE username = '<span class="hl-safe">admin</span>' AND password = '<span class="hl-safe">password123</span>';</code>
+                        </div>
+                        <div class="result success">結果：資料庫回傳該用戶資料，登入成功。</div>
+                    </div>
+                </div>
+
+                <div class="scenario-card attack">
+                    <div class="card-header">😈 攻擊輸入</div>
+                    <div class="card-body">
+                        <div class="input-group">
+                            <label>帳號：</label> <span class="user-input evil">' OR '1'='1' #</span>
+                        </div>
+                        <div class="input-group">
+                            <label>密碼：</label> <span class="user-input">隨意輸入</span>
+                        </div>
+                        <div class="code-block">
+                            <div class="code-title">邏輯篡改後的 SQL</div>
+                            <code>SELECT * FROM users WHERE username = '<span class="hl-danger"></span>' <span class="hl-logic">OR '1'='1' #</span>' AND password = '...';</code>
+                        </div>
+                        <div class="result failure">
+                            <p><strong>觸發攻擊：</strong>由於 <code>#</code> 在 MySQL 中代表註解，因此後面 <code>AND password = ...</code> 的密碼驗證部分被無效化了！</p>
+                            <p>條件 <code>'1'='1'</code> 恆為真 (True)，伺服器將回傳資料表中第一個用戶（通常是管理員），攻擊者無需密碼即可登入！</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 實戰演練 -->
+        <section class="glass-panel" id="playground">
+            <h2><span class="icon">🎮</span> 實戰演練：親自體驗 SQL Injection</h2>
+            <p class="scenario-desc">請嘗試在下方輸入不同的帳號密碼組合。您可以先使用正常帳號 <code>admin</code> / <code>password123</code> 登入，再嘗試使用攻擊字串 <code>' OR '1'='1</code> 進行注入測試。</p>
+            
+            <div class="playground-controls" style="margin-bottom: 20px; padding: 15px; background: rgba(255,255,255,0.05); border-radius: 8px; border-left: 4px solid var(--text-accent);">
+                <p style="margin-bottom: 10px;"><strong>第一步：</strong> 在開始測試前，請先初始化資料庫結構與假資料。</p>
+                <button id="btn-init-db" class="btn action-btn">🔄 初始化資料庫 (建表與寫入假資料)</button>
+                <span id="init-status" style="margin-left: 15px; font-weight: bold;"></span>
+            </div>
+
+            <div class="scenario-grid">
+                <!-- 測試 Vulnerable Code -->
+                <div class="scenario-card attack">
+                    <div class="card-header" style="background: rgba(255, 75, 75, 0.2);">❌ 測試危險寫法 (login.php)</div>
+                    <div class="card-body">
+                        <form id="form-vulnerable" class="demo-form">
+                            <div class="input-group">
+                                <label>帳號：</label> 
+                                <input type="text" name="username" class="demo-input" placeholder="請輸入帳號" value="' OR '1'='1' #" required>
+                            </div>
+                            <div class="input-group">
+                                <label>密碼：</label> 
+                                <input type="text" name="password" class="demo-input" placeholder="請輸入密碼" value="隨便打">
+                            </div>
+                            <button type="submit" class="btn danger-btn" style="width: 100%; margin-top: 10px; padding: 10px; font-size: 1.1em; cursor: pointer; border-radius: 6px; border: none; background: #ff4b4b; color: white; font-weight: bold;">發送請求 (Vulnerable)</button>
+                        </form>
+                        <div class="result-box" id="result-vulnerable" style="margin-top: 15px; padding: 15px; background: #000; border-radius: 8px; font-family: var(--font-code); font-size: 0.9em; min-height: 80px;">等待測試...</div>
+                    </div>
+                </div>
+
+                <!-- 測試 Secure Code -->
+                <div class="scenario-card normal">
+                    <div class="card-header" style="background: rgba(77, 255, 184, 0.2);">✅ 測試安全寫法 (secure_login.php)</div>
+                    <div class="card-body">
+                        <form id="form-secure" class="demo-form">
+                            <div class="input-group">
+                                <label>帳號：</label> 
+                                <input type="text" name="username" class="demo-input" placeholder="請輸入帳號" value="' OR '1'='1' #" required>
+                            </div>
+                            <div class="input-group">
+                                <label>密碼：</label> 
+                                <input type="text" name="password" class="demo-input" placeholder="請輸入密碼" value="隨便打">
+                            </div>
+                            <button type="submit" class="btn success-btn" style="width: 100%; margin-top: 10px; padding: 10px; font-size: 1.1em; cursor: pointer; border-radius: 6px; border: none; background: #45a29e; color: white; font-weight: bold;">發送請求 (Secure)</button>
+                        </form>
+                        <div class="result-box" id="result-secure" style="margin-top: 15px; padding: 15px; background: #000; border-radius: 8px; font-family: var(--font-code); font-size: 0.9em; min-height: 80px;">等待測試...</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 3 & 4. 程式碼對比 -->
+        <section class="glass-panel" id="code-comparison">
+            <h2><span class="icon">⚖️</span> 程式碼大對決：危險寫法 vs 安全寫法</h2>
+            <div class="comparison-grid">
+                <!-- 3. Vulnerable Code -->
+                <div class="code-window vulnerable">
+                    <div class="window-header">
+                        <span class="dot red"></span>
+                        <span class="dot yellow"></span>
+                        <span class="dot green"></span>
+                        <span class="filename">login.php (Vulnerable Code - PHP) ❌</span>
+                    </div>
+                    <div class="window-body">
+                        <p class="code-note">使用 <code>mysqli</code> 直接拼接字串的典型錯誤：</p>
+<pre><code class="language-php">
+$conn = mysqli_connect("localhost", "db_user", "db_pass", "database");
+$username = $_POST['username'];
+$password = $_POST['password'];
+
+<span class="comment">// 🚨 危險：直接將變數拼接到 SQL 字串中</span>
+<span class="highlight-line-danger">$query = "SELECT * FROM users WHERE username = '$username' AND password = '$password'";</span>
+
+$result = mysqli_query($conn, $query);
+
+if (mysqli_num_rows($result) > 0) {
+    echo "登入成功！";
+} else {
+    echo "帳號或密碼錯誤。";
+}
+</code></pre>
+                    </div>
+                </div>
+
+                <!-- 4. Secure Code -->
+                <div class="code-window secure">
+                    <div class="window-header">
+                        <span class="dot red"></span>
+                        <span class="dot yellow"></span>
+                        <span class="dot green"></span>
+                        <span class="filename">secure_login.php (Secure Code - PHP) ✅</span>
+                    </div>
+                    <div class="window-body">
+                        <p class="code-note">使用 <strong>預編譯陳述式 (Prepared Statements)</strong> 與 PDO：</p>
+<pre><code class="language-php">
+try {
+    $pdo = new PDO("mysql:host=localhost;dbname=database", "db_user", "db_pass");
+    
+    <span class="comment">// ✨ 步驟 A：編寫具備佔位符 (?) 的 SQL 模板</span>
+    <span class="highlight-line-safe">$sql = "SELECT id, username FROM users WHERE username = ? AND password = ?";</span>
+    $stmt = $pdo->prepare($sql);
+    
+    <span class="comment">// ✨ 步驟 B：綁定參數並執行（資料與指令分離）</span>
+    $stmt->execute([$_POST['username'], $_POST['password']]);
+    $user = $stmt->fetch();
+    
+    if ($user) {
+        echo "登入成功，歡迎 " . htmlspecialchars($user['username']);
+    } else {
+        echo "認證失敗。";
+    }
+} catch (PDOException $e) {
+    die("資料庫錯誤。");
+}
+</code></pre>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 5. 開發建議 -->
+        <section class="glass-panel" id="recommendations">
+            <h2><span class="icon">🛡️</span> 防禦之道：開發實戰建議</h2>
+            <p class="rec-intro">從資訊管理與系統架構的角度，防禦 SQL Injection 應遵循「<strong>深度防禦</strong>」原則：</p>
+            
+            <div class="rec-grid">
+                <div class="rec-card">
+                    <div class="rec-icon">🔒</div>
+                    <h3>全面參數化</h3>
+                    <p>所有的資料庫互動（SELECT, INSERT, UPDATE, DELETE）皆必須使用<strong>預編譯陳述式</strong>。這是目前公認最有效的防線。</p>
+                </div>
+                
+                <div class="rec-card">
+                    <div class="rec-icon">✅</div>
+                    <h3>輸入驗證 (白名單)</h3>
+                    <p>採取「白名單」策略。例如，若預期輸入是數字（如 <code>user_id</code>），應在進入資料庫前強制轉換型別 <code>(int)$_POST['id']</code>。</p>
+                </div>
+
+                <div class="rec-card">
+                    <div class="rec-icon">🔑</div>
+                    <h3>最小權限原則</h3>
+                    <p>網頁應用程式連接資料庫的帳號，不應具備 DROP TABLE 或存取系統表（如 information_schema）的權限。應針對不同模組分配僅具備所需權限的帳號。</p>
+                </div>
+
+                <div class="rec-card">
+                    <div class="rec-icon">🔇</div>
+                    <h3>避免詳細錯誤訊息</h3>
+                    <p>在正式環境中，應關閉資料庫錯誤顯示（如 <code>display_errors = Off</code>），避免攻擊者透過錯誤回顯（Error-based SQLi）推測資料庫結構。</p>
+                </div>
+
+                <div class="rec-card wide">
+                    <div class="rec-icon">🛠️</div>
+                    <h3>使用 ORM 工具</h3>
+                    <p>導入如 Eloquent (Laravel) 或 Doctrine 等 ORM 框架，這些工具底層預設即使用參數化查詢，能大幅降低人為疏忽導致的漏洞。</p>
+                </div>
+            </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer>
+        <p>為高職生設計的資訊安全教育平台 | 守護代碼，從你我做起 💻</p>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>

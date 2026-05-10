@@ -1,0 +1,92 @@
+背景資訊
+1. 這次要實作的是 Paramater Tampering
+2. 參考資料如下
+
+Paramater Tampering
+1. 簡介 (Introduction)
+(1) 參數篡改 (Parameter Tampering) 是一種利用 Web 應用程式過度信
+任客戶端輸入資料的攻擊手段。攻擊者透過修改 HTTP 請求中的參數
+（如 URL 查詢字串、表單欄位、Cookie 或隱藏表單內容），試圖改變
+應用程式的執行結果。
+(2) 其核心問題在於缺乏伺服器端驗證。開發者往往假設用戶端回傳的資
+料（特別是隱藏欄位）與伺服器當初發出的資料一致。
+(3) 攻擊者不需高深的技術，僅需透過瀏覽器開發者工具（F12）或代理工
+具（如 Burp Suite）即可修改商品價格、用戶權限等級或檔案存取路
+徑。
+2. 範例 (Example Scenario)
+假設某電商網站的結帳流程，將商品單價存放在隱藏表單欄位中：
+(1) 正常操作： 用戶選購一件 5,000 元的產品，點擊結帳，瀏覽器發
+送：POST /checkout.php，內容含 item_id=101&price=5000&qty=1。
+(2) 攻擊行為： 攻擊者在點擊結帳前，使用開發者工具將 HTML 中的隱藏
+欄位值改為 1：
+HTML
+<input type="hidden" name="price" value="1">
+觸發攻擊： 伺服器接收到請求後，若未重新從資料庫比對價格，便會
+以 1 元的價格完成交易，造成企業重大的財務損失。
+3. 危險寫法 (Vulnerable Code - PHP)
+以下程式碼直接信任來自 POST 請求的價格資訊，這在資安實務上是非
+常危險的：
+// checkout.php
+session_start();
+if (isset($_POST['item_id']) && isset($_POST['price'])) {
+$item_id = $_POST['item_id'];
+$price = $_POST['price']; // 直接信任前端傳來的價格
+$qty = $_POST['qty'];
+$total = $price * $qty;
+// 執行扣款邏輯
+process_payment($_SESSION['user_id'], $total);
+echo "付款成功，總金額：$" . $total;
+}
+4. 安全寫法 (Secure Code - PHP)
+正確的做法是**「永遠不要信任用戶端的輸入」**。所有關鍵數據（如價
+格、權限、折扣）應一律以伺服器端資料庫為準。
+(1) 步驟 A：僅接收 ID，從後端查表
+session_start();
+if (isset($_POST['item_id'])) {
+$item_id = (int)$_POST['item_id'];
+$qty = (int)$_POST['qty'];
+// 關鍵：從資料庫獲取真實價格，而非從 $_POST 獲取
+$stmt = $pdo->prepare("SELECT price FROM products WHERE
+id = ?");
+$stmt->execute([$item_id]);
+$product = $stmt->fetch();
+if ($product) {
+$real_price = $product['price'];
+$total = $real_price * $qty;
+// 驗證庫存與執行扣款
+process_payment($_SESSION['user_id'], $total);
+}
+}
+(2) 步驟 B：對敏感參數進行數位簽章 (Optional)
+若某些情境必須在前端傳遞狀態，可使用雜湊值 (HMAC) 驗證資料是
+否被改動：
+// 生成時
+$mac = hash_hmac('sha256', $data_string, $secret_key);
+// 驗證時
+if (!hash_equals($mac, $_POST['mac'])) {
+die("偵測到參數非法篡改！");
+}
+5. 開發建議 (Development Recommendations)從資管與軟體品質保證的角
+度出發，建議採取以下多層次防禦策略：
+(1) 後端權威原則： 涉及金流、權限或業務邏輯的數據，必須在伺服
+器端進行二次校驗。前端傳來的參數應僅視為「意圖」，而非「事
+實」。
+(2) 輸入驗證與過濾 (Input Validation)： 嚴格檢查參數的資料類型
+（如數字、字串）、長度與格式。例如數量 (qty) 不應出現負數。
+(3) 使用 Session 存儲狀態： 敏感的暫時性資料（如購物車總額、結
+帳進度）應存放在伺服器端的 $_SESSION 中，而非暴露在 HTML
+隱藏欄位或 Cookie 裡。
+(4) 最小權限存取控制： 確保用戶無法透過修改 URL 參數（如
+user_id=100 改為 user_id=1）存取他人的資料（這也稱為 IDOR
+漏洞）。
+(5) 日誌紀錄與異常監控： 對於不合理的參數變動（例如商品價格與
+資料庫落差極大時）應觸發系統警報，以便資安人員即時介入調
+查
+
+須完成的工作
+增加一個Paramater Tampering
+以下是我期望的結果
+1. 網站外觀要和上一階段一樣有科技感
+2. 不論是危險寫法或安全寫法
+
+

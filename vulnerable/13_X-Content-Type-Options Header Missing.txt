@@ -1,0 +1,88 @@
+背景資訊
+1. 這次要實作的是 X-Content-Type-Options Header Missing
+2. 參考資料如下
+
+X-Content-Type-Options Header Missing
+1. 簡介 (Introduction)
+(1) X-Content-Type-Options 是一個 HTTP 響應標頭，旨在防止瀏覽器
+執行「MIME 嗅探」。MIME 嗅探是瀏覽器的一種自動機制，當伺服器
+宣告的 Content-Type 與實際內容不符時，瀏覽器會嘗試猜測並解析
+該檔案。
+(2) 其核心問題在於非預期類型的腳本執行。攻擊者可以上傳一個偽裝成
+圖片（如 image/jpeg）但實則包含 JavaScript 的惡意檔案。若伺
+服器未設置 nosniff 指令，瀏覽器可能會忽略圖片標頭，將其作為
+腳本執行。
+(3) 透過設置 X-Content-Type-Options: nosniff，開發者可以強制要求
+瀏覽器嚴格遵守伺服器所宣告的 MIME 類型。若類型不匹配（例如
+Content-Type: text/plain 但內容是腳本），瀏覽器將直接拒絕執行
+或載入該資源，進而阻斷潛在的 XSS 攻擊。
+2. 範例 (Example Scenario)
+(1) 漏洞前提： 某 PHP 網站提供用戶上傳頭像功能，且未配置 nosniff
+標頭。
+(2) 攻擊路徑：
+➢ 攻擊者創建一個名為 malicious.jpg 的檔案，內容為
+<script>alert('XSS')</script>。
+➢ 伺服器接受上傳並將其存放在 /uploads/ 目錄。
+➢ 攻擊者誘導受害者訪問
+https://target.com/uploads/malicious.jpg，或者在網頁中以
+<script src="/uploads/malicious.jpg"></script> 的方式引用
+它。
+(3) 觸發攻擊： 儘管伺服器回傳 Content-Type: image/jpeg，但瀏覽器在
+嗅探後發現內容是 JavaScript，進而執行該惡意代碼，導致用戶資料
+外洩。
+3. 危險寫法 (Vulnerable Code - PHP)
+(1) 以下 PHP 程式碼僅輸出了內容，卻沒有限制瀏覽器的嗅探行為，這在
+提供檔案下載或動態生成資源時非常危險：
+<?php
+// download.php
+$file_content = file_get_contents("user_upload.txt");
+// 即使設置了 Content-Type，若無 nosniff，瀏覽器仍可能進行嗅探
+header("Content-Type: text/plain");
+echo $file_content;
+// 若 $file_content 包含 HTML/JS，瀏覽器可能將其當作網頁解析
+?>
+4. 安全寫法 (Secure Code - PHP)
+(1) 正確的做法是在所有響應中加入 nosniff 標記，特別是在處理用戶上
+傳的資源時。
+➢ 步驟 A：設置 nosniff 標頭
+<?php
+// 強制瀏覽器不進行 MIME 嗅探
+header("X-Content-Type-Options: nosniff");
+// 確保設置了正確的 MIME 類型
+header("Content-Type: text/plain; charset=UTF-8");
+echo "這僅僅是一段純文字，瀏覽器不應將其解析為其他格式。";
+?>
+➢ 步驟 B：全局配置 (推薦)
+建議在 Web 伺服器層級統一配置，確保全站生效。
+Apache (.htaccess):
+Apache
+Header set X-Content-Type-Options "nosniff"
+Nginx (nginx.conf):
+Nginx
+add_header X-Content-Type-Options "nosniff" always;
+5. 開發建議 (Development Recommendations)
+從資管與資訊安全架構角度出發，建議採取以下多層次防禦策略：
+(1) 搭配正確的 MIME 類型： 設置 nosniff 的前提是伺服器必須精確
+回傳正確的 Content-Type。例如，CSS 檔案必須宣告為
+text/css，否則在 nosniff 開啟的情況下，瀏覽器會因安全性考
+量拒絕加載樣式。
+(2) 上傳過濾與重新編碼： 針對上傳功能，應檢查檔案內容是否與副
+檔名相符。對圖片檔案可進行重新縮放或過濾，移除內嵌的惡意元
+數據（Metadata）。
+(3) 縱深防禦 (Defense in Depth)： 此標頭應與 Content Security
+Policy (CSP) 配合使用。即便瀏覽器繞過了 MIME 限制，CSP 也
+能限制惡意腳本的執行來源。
+(4) 禁用不必要的內容類型： 對於 API 響應，建議始終使用
+application/json 並加上 nosniff，避免瀏覽器將 JSON 內容誤
+判為 HTML。
+(5) 合規性檢核： 許多資安掃描工具（如 OWASP ZAP）會將缺少此標
+頭視為「中低風險」漏洞。在資管稽核流程中，應將其列為網頁伺
+服器基準配置（Baseline Configuration）的必檢查項。
+
+須完成的工作
+增加一個X-Content-Type-Options Header Missing的互動網頁,當然,index.html也要做對應的修改
+以下是我期望的結果
+1. 網站外觀要和上一階段一樣有科技感
+2. 不論是危險寫法或安全寫法
+
+

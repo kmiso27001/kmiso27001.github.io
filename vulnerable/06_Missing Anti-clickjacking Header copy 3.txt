@@ -1,0 +1,79 @@
+背景資訊
+1. 這次要實作的是 Missing Anti-clickjacking Header
+2. 參考資料如下
+
+Missing Anti-clickjacking Header
+1. 簡介 (Introduction)
+(1) 點擊劫持 (Clickjacking)，又稱「使用者介面紅利攻擊 (UI
+Redressing)，是一種欺騙性的技術，攻擊者將受信任的目標網站嵌入
+到惡意網站的透明 iframe 中。
+(2) 其核心問題在於網頁允許被第三方域名嵌套，攻擊者會在透明的目標網
+頁上方覆蓋一層誘騙內容（如「點擊領取獎品」）。
+(3) 當用戶點擊看似無害的惡意網頁按鈕時，實際上觸發的是底層被隱藏目
+標網站上的敏感操作（如：刪除帳號、修改設定、發送隱私訊息）。由
+於操作是在受害者的登入狀態下進行，伺服器會視為合法行為。
+2. 範例 (Example Scenario)
+假設網站的「刪除帳號」頁面（account.php?action=delete）缺乏防護：
+(1) 攻擊誘餌： 攻擊者製作一個吸引點擊的網頁，例如「恭喜！您獲得
+了最新 iPhone，點擊此處領取」。
+(2) 透明嵌套： 攻擊者使用 CSS 將網站的刪除按鈕精確地重疊在「領取
+獎品」按鈕的正上方，並將社交網站的 opacity 設為 0（完全透明）。
+(3) 觸發攻擊： 當受害者點擊「領取獎品」時，瀏覽器實際上點擊了社交
+網站的「確認刪除帳號」按鈕。因此在毫不知情的情況下失去了帳號。
+3. 危險寫法 (Vulnerable Code - PHP)
+若 PHP 程式碼中未對 HTTP 響應頭進行限制，預設情況下瀏覽器允許該網
+頁被任何網站嵌入：
+<?php
+// settings.php
+session_start();
+// 僅驗證身份，但未限制 UI 顯示權限
+if (!isset($_SESSION['user_id'])) {
+die("請先登入");
+}
+echo "<h1>個人設定</h1>";
+echo "<button onclick='deleteAccount()'>刪除帳號</button>";
+// 缺乏 X-Frame-Options 或 CSP frame-ancestors 標頭
+?>
+4. 安全寫法 (Secure Code - PHP)
+正確的做法是透過伺服器端發送標頭，限制網頁被框架化(Framing)的權限。
+(1) 步驟 A：使用 X-Frame-Options 標頭
+這是目前最普遍且兼容性最佳的傳統做法。
+<?php
+// 禁止所有網站（包括同源網站）將此頁面嵌入 iframe
+header("X-Frame-Options: DENY");
+// 或：僅允許同源網站嵌入（通常用於網站內部的功能嵌套）
+// header("X-Frame-Options: SAMEORIGIN");
+?>
+(2) 步驟 B：使用 Content Security Policy (CSP) 之 frame-ancestors
+這是現代資安標準中更強大且精確的替代方案，可取代 X-Frame-Options。
+<?php
+// 限制只有自己的網站可以嵌套此頁面
+header("Content-Security-Policy: frame-ancestors 'self';");
+// 若需允許特定合作夥伴域名嵌套：
+// header("Content-Security-Policy: frame-ancestors 'self'
+https://trusted-partner.com;");
+?>
+5. 開發建議 (Development Recommendations)
+從資管與資訊安全治理的角度出發，建議採取以下多層次防禦策略：
+(1) 優先採用 DENY 策略： 對於包含敏感操作（轉帳、刪除、修改密
+碼）的頁面，應強制設定為 DENY，完全禁止被嵌入。
+(2) 統一標頭管理：建議在 Web 伺服器層級（如 Apache 的.htaccess
+或 Nginx 的 nginx.conf）全域配置此標頭，確保開發者不會因
+為遺漏個別 PHP 檔案而產生漏洞。
+(3) 淘汰舊式 Frame-busting 腳本： 過去常使用 JavaScript（如 if
+(top != self) ...）來檢測嵌套，但這類方法容易被攻擊者繞過，
+應改為依賴標準的 HTTP 安全標頭。
+(4) 縱深防禦機制： 點擊劫持通常與 CSRF 結合使用，因此應同時實施
+AntiCSRF Tokens，即使攻擊者成功誘導用戶點擊，也會因為缺乏
+Token 而導致請求失敗。
+(5) 資安意識教育： 從資管角度看，技術防禦是基礎，但教育使用者識
+別社交工程陷阱（不隨意點擊不明連結）同樣是降低點擊劫持風險的
+重要環節。
+
+須完成的工作
+增加一個Missing Anti-clickjacking Header的互動網頁,當然,index.html也要做對應的修改
+以下是我期望的結果
+1. 網站外觀要和上一階段一樣有科技感
+2. 不論是危險寫法或安全寫法
+
+

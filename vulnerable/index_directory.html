@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="專為高職生設計的資訊安全教學網站，深入解析 Directory Browsing 目錄遍歷漏洞。">
+    <title>Directory Browsing 目錄遍歷 完全解析</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Fira+Code:wght@400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="background-effects">
+        <div class="glow-orb orb-1" style="background: radial-gradient(circle, rgba(255,184,77,0.4) 0%, transparent 70%);"></div>
+        <div class="glow-orb orb-2" style="background: radial-gradient(circle, rgba(255,75,75,0.4) 0%, transparent 70%);"></div>
+    </div>
+
+    <header class="hero">
+        <div class="container">
+            <h1 class="glitch" data-text="Directory Browsing">Directory Browsing</h1>
+            <p class="subtitle">伺服器配置漏洞：當敏感檔案赤裸裸地暴露 (探測篇)</p>
+        </div>
+    </header>
+
+    <main class="container">
+        <!-- 返回首頁 -->
+        <div style="margin-bottom: 20px;">
+            <a href="index.html" class="btn" style="text-decoration: none; display: inline-block; padding: 10px 20px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 5px; color: white;">⬅️ 返回首頁</a>
+        </div>
+
+        <!-- ====== 第 5 章：Directory Browsing ====== -->
+        <div style="margin: 60px 0; border-top: 2px dashed #ffb84d; text-align: center; position: relative;">
+            <span style="background: var(--bg-color); padding: 0 20px; font-size: 1.5rem; color: #ffb84d; position: relative; top: -18px; font-weight: bold;">漏洞探測：Directory Browsing</span>
+        </div>
+
+        <!-- Intro -->
+        <section class="glass-panel" id="dir-intro">
+            <h2><span class="icon">📁</span> 什麼是目錄遍歷 (Directory Browsing)？</h2>
+            <div class="grid-3">
+                <div class="card">
+                    <h3>⚙️ 伺服器配置失誤</h3>
+                    <p>當使用者請求一個沒有預設首頁（如 index.php）的目錄時，若伺服器開啟了自動索引 (Auto-indexing)，就會將該目錄下的所有檔案列出來。</p>
+                </div>
+                <div class="card warning">
+                    <h3>🕵️‍♂️ 駭客的尋寶遊戲</h3>
+                    <p>駭客常會探測 <code>/config</code>, <code>/backup</code>, <code>/uploads</code> 等目錄。若這些目錄開啟了目錄遍歷，駭客就能一覽無遺，尋找有價值的目標。</p>
+                </div>
+                <div class="card danger">
+                    <h3>💥 致命的資訊洩漏</h3>
+                    <p>工程師常因為貪圖方便，把資料庫設定檔 <code>db.bak</code> 或 <code>secret.txt</code> 備份在網頁目錄下。一旦目錄被看光，整個系統等於雙手奉上！</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 實戰演練 -->
+        <section class="glass-panel" id="dir-playground">
+            <h2><span class="icon">🕹️</span> 實戰演練：親自體驗目錄探測</h2>
+            <p class="scenario-desc">下方模擬了駭客嘗試直接在瀏覽器網址列輸入並訪問 <code>https://example.com/config/</code> 時的情境。請試著點擊下方危險寫法中的檔案，看看會發生什麼事！</p>
+            
+            <div class="scenario-grid">
+                <!-- Directory Vulnerable -->
+                <div class="scenario-card attack">
+                    <div class="card-header" style="background: rgba(255, 75, 75, 0.2);">❌ 測試危險配置 (開啟 Auto-indexing)</div>
+                    <div class="card-body">
+                        <div style="background: #222; padding: 10px; border-radius: 8px 8px 0 0; border: 1px solid #444; border-bottom: none; display: flex; align-items: center;">
+                            <span style="color: #888; margin-right: 10px;">🌐 URL:</span>
+                            <span style="color: #ffb84d; font-family: monospace;">https://vulnerable-bank.com/config/</span>
+                        </div>
+                        <iframe id="iframe-dir-vulnerable" src="directory_vulnerable.php" style="width: 100%; height: 250px; border: 1px solid #444; border-radius: 0 0 8px 8px; background: #fff;"></iframe>
+                        <p style="font-size: 0.85em; color: #ff4b4b; margin-top: 10px; text-align: center;">▲ 伺服器因為找不到 index.php，自動將目錄下的敏感備份檔全部列出來了！</p>
+                    </div>
+                </div>
+
+                <!-- Directory Secure -->
+                <div class="scenario-card normal">
+                    <div class="card-header" style="background: rgba(77, 255, 184, 0.2);">✅ 測試安全配置 (關閉 Auto-indexing 或放空首頁)</div>
+                    <div class="card-body">
+                        <div style="background: #222; padding: 10px; border-radius: 8px 8px 0 0; border: 1px solid #444; border-bottom: none; display: flex; align-items: center;">
+                            <span style="color: #888; margin-right: 10px;">🌐 URL:</span>
+                            <span style="color: #4dffb8; font-family: monospace;">https://secure-bank.com/config/</span>
+                        </div>
+                        <iframe id="iframe-dir-secure" src="directory_secure.php" style="width: 100%; height: 250px; border: 1px solid #444; border-radius: 0 0 8px 8px; background: #fff;"></iframe>
+                        <p style="font-size: 0.85em; color: #4dffb8; margin-top: 10px; text-align: center;">▲ 伺服器拒絕列出目錄，回傳 403 Forbidden，成功保護內部檔案結構！</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 程式碼對比 -->
+        <section class="glass-panel" id="dir-code-comparison">
+            <h2><span class="icon">⚖️</span> 伺服器配置大對決：目錄遍歷防禦</h2>
+            <div class="comparison-grid">
+                <!-- Vulnerable -->
+                <div class="code-window vulnerable">
+                    <div class="window-header">
+                        <span class="dot red"></span>
+                        <span class="dot yellow"></span>
+                        <span class="dot green"></span>
+                        <span class="filename">危險配置 (Apache .htaccess / httpd.conf)</span>
+                    </div>
+                    <div class="window-body">
+<pre><code class="language-apache">
+<span class="comment"># 🚨 危險：'+Indexes' 啟用了自動目錄列表功能</span>
+<span class="highlight-line-danger">Options +Indexes +FollowSymLinks</span>
+
+<span class="comment"># Nginx 的寫法 (nginx.conf):</span>
+<span class="comment"># location / {</span>
+<span class="highlight-line-danger">#     autoindex on;</span>
+<span class="comment"># }</span>
+</code></pre>
+                    </div>
+                </div>
+
+                <!-- Secure -->
+                <div class="code-window secure">
+                    <div class="window-header">
+                        <span class="dot red"></span>
+                        <span class="dot yellow"></span>
+                        <span class="dot green"></span>
+                        <span class="filename">安全配置 (Apache .htaccess / PHP)</span>
+                    </div>
+                    <div class="window-body">
+<pre><code class="language-apache">
+<span class="comment"># ✨ 方法 A：在 Apache 伺服器層級明確禁用索引 (推薦)</span>
+<span class="highlight-line-safe">Options -Indexes</span>
+
+<span class="comment"># Nginx 的寫法:</span>
+<span class="highlight-line-safe"># autoindex off;</span>
+</code></pre>
+<hr style="border: 0; border-top: 1px solid #333; margin: 15px 0;">
+<pre><code class="language-php">
+<span class="comment">&lt;!-- ✨ 方法 B：在不希望被遍歷的目錄放一個 index.php --&gt;</span>
+&lt;?php
+<span class="comment">// 強制回傳 403 並停止執行</span>
+<span class="highlight-line-safe">header("HTTP/1.1 403 Forbidden");</span>
+exit("Access Denied");
+?&gt;
+</code></pre>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 開發建議 -->
+        <section class="glass-panel" id="dir-recommendations">
+            <h2><span class="icon">🛡️</span> 開發建議：如何避免檔案結構洩漏</h2>
+            <div class="rec-grid">
+                <div class="rec-card">
+                    <div class="rec-icon">⛔</div>
+                    <h3>最小化暴露面</h3>
+                    <p>確保生產環境（Production）中，所有 Web 伺服器的 Auto-indexing 功能皆已從設定檔（如 apache2.conf 或 nginx.conf）全域關閉。</p>
+                </div>
+                
+                <div class="rec-card">
+                    <div class="rec-icon">📦</div>
+                    <h3>敏感檔案路徑隱蔽</h3>
+                    <p>設定檔（如 config.php）、備份檔（如 .bak）不應存放在 Web Root（網頁對外公開的根目錄）下，應移至上層目錄，讓瀏覽器絕對無法直接存取。</p>
+                </div>
+
+                <div class="rec-card">
+                    <div class="rec-icon">🔐</div>
+                    <h3>PHP 動態權限檢查</h3>
+                    <p>如果目錄存放的是使用者上傳的機密檔案，不應直接開放 URL。應透過 PHP 腳本驗證使用者 Session，再使用 <code>readfile()</code> 輸出檔案內容給前端。</p>
+                </div>
+
+                <div class="rec-card">
+                    <div class="rec-icon">📡</div>
+                    <h3>自定義錯誤頁面與掃描</h3>
+                    <p>配置統一的 403 / 404 錯誤頁面，隱藏伺服器版本資訊。並定期使用 OWASP ZAP 或 Nikto 等工具進行自動探測掃描。</p>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer>
+        <p>為高職生設計的資訊安全教育平台 | 守護代碼，從你我做起 💻</p>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>

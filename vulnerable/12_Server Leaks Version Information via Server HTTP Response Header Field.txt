@@ -1,0 +1,85 @@
+背景資訊
+1. 這次要實作的是 Server Leaks Version Information via "Server" HTTP Response
+Header Field
+2. 參考資料如下
+
+Server Leaks Version Information via "Server" HTTP Response
+Header Field
+1. 簡介 (Introduction)
+(1) Server HTTP 標頭 是 Web 伺服器在回傳響應時自動產生的欄位，用於
+標示處理該請求的伺服器軟體名稱（如 Apache, Nginx, Microsoft-
+IIS）。
+(2) 其核心問題在於環境特徵外洩 (Fingerprinting)。預設配置下，伺服器
+往往會揭露極其詳細的版本號與作業系統資訊（例如 Apache/2.4.41
+(Ubuntu) OpenSSL/1.1.1）。
+(3) 從資管安全角度看，這種詳盡的技術清單大幅縮短了攻擊者的前期掃描
+時間。攻擊者只需識別出特定版本，即可針對性地搜尋已知的「一鍵攻
+擊腳本（One-Click Exploits）」。隱藏版本資訊雖不能根治漏洞，但能
+有效落實「模糊化防禦」，增加攻擊成本。
+2. 範例 (Example Scenario)
+(1) 漏洞偵察： 攻擊者利用滲透測試工具對目標網站進行 Header 分析。
+(2) 獲取標頭： 伺服器在 HTTP 200 OK 的回應中包含以下內容：
+HTTP/1.1 200 OK
+Server: Apache/2.2.15 (CentOS) DAV/2 PHP/5.4.16
+Content-Type: text/html; charset=UTF-8
+威脅分析： 攻擊者發現該伺服器使用的 Apache 2.2.15 存在多個
+已知的高危險漏洞（如 CVE-2017-9798），且 PHP 5.4 已停止更新
+多年
+(3) 發動攻擊：
+根據該版本資訊，攻擊者直接加載特定的緩衝區溢位
+（Buffer Overflow）Payload，成功取得伺服器的控制權（Shell）。
+3. 危險寫法 (Vulnerable Configuration)
+(1) 這是典型的環境配置問題。以最常見的 Apache 與 Nginx 為例，預
+設設定會揭露完整資訊。
+➢ Apache (httpd.conf):
+# 預設通常為 Full，會顯示版本、OS 與模組資訊
+ServerTokens Full
+ServerSignature On
+➢ Nginx (nginx.conf):
+# 預設為開啟，會在 Header 顯示版本號
+server_tokens on;
+4. 安全寫法 (Secure Mitigation)
+必須透過修改 Web 伺服器的核心設定檔來限制標頭輸出的詳細程度。
+(1) 方法 A：針對 Apache 伺服器 (httpd.conf / apache2.conf)
+應將資訊減至最少，僅顯示為 "Apache"。
+# 僅顯示軟體名稱，隱藏版本號與作業系統
+ServerTokens Prod
+# 關閉錯誤頁面底部的伺服器資訊特徵
+ServerSignature Off
+(2) 方法 B：針對 Nginx 伺服器 (nginx.conf)
+Nginx
+http {
+# 隱藏 Nginx 的具體版本號
+server_tokens off;
+}
+(3) 方法 C：透過 PHP 修改 (僅限部分環境)
+雖然 Server 標頭通常由網頁伺服器控制，但在某些代理環境下，
+可嘗試移除：
+<?php
+// PHP 難以直接修改 Server 標頭，應優先修改 Web Server 配置
+// 但可確保不手動輸出額外標頭
+header_remove("Server");
+?>
+5. 開發建議 (Development Recommendations)
+從資管與資訊安全治理的角度出發，建議採取以下多層次防護策略：
+(1) 遵循最小資訊揭露原則： 伺服器不應回傳任何對正常用戶無益、但
+對攻擊者有利的技術細節。將 ServerTokens 設為 Prod 是資安稽核
+中最基本的要求。
+(2) 自定義 Server 標頭 (WAF/Reverse Proxy)： 在進階架構中，可以使
+用負載平衡器（如 F5）或反向代理（如 Nginx）將 Server 標頭重寫
+為不具名內容（例如 Server: WebServer），徹底消除特徵。
+(3) 錯誤頁面清理： 確保 404 或 500 錯誤頁面是由應用程式自定義的，
+避免洩漏伺服器預設的技術簽名。
+(4) 自動化配置檢核： 將伺服器配置納入「基礎架構即代碼 (IaC)」的審
+核流程中，使用指令碼自動檢查 server_tokens 是否已關閉。
+(5) 持續更新與補丁管理： 隱藏版本是為了拖延攻擊速度，但根本解決之
+道仍是定期安裝作業系統與 Web 伺服器的安全更新。
+
+須完成的工作
+增加一個Server Leaks Version Information via "Server" HTTP Response
+Header Field的互動網頁,當然,index.html也要做對應的修改
+以下是我期望的結果
+1. 網站外觀要和上一階段一樣有科技感
+2. 不論是危險寫法或安全寫法
+
+

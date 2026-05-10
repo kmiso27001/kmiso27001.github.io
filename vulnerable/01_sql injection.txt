@@ -1,0 +1,53 @@
+背景資訊
+1.我使用XAMPP當作我的開發環境
+2. 我已在 sql server新增了名為database的資料庫,可以用db_user和db_pass登入
+需完成工作
+1. 產生lgoin.php和secure_login.php
+2. 修改index.html使學生能夠體驗上述兩個PHP檔案的不同,特別是可體驗lgoin.php產生的資安風險
+3. 您可以在database新增相關的Table和data
+
+執行第一步(先點擊網頁上的 「🔄 初始化資料庫」 按鈕)後,甚麼多沒有發生
+
+
+期待是登入成功但結果如下
+
+
+帳號： 
+' OR '1'='1
+密碼： 
+111
+發送請求 (Vulnerable)
+🤖 實際執行的 SQL 語句：
+SELECT * FROM users WHERE username = '' OR '1'='1' AND password = '111'
+❌ 登入失敗：帳號或密碼錯誤。
+
+
+我已經為您完成了各項 PHP 檔案的實作，並大幅升級了 index.html，讓學生可以直接在網頁上進行實戰演練！
+
+以下是已完成的工作與運作邏輯：
+
+📁 新增與修改的檔案 (皆位於 d:\master\sqli-tutorial\)
+新增 setup.php (資料庫初始化腳本)
+負責自動連線至 database，並建立 users 資料表。
+寫入兩筆測試資料：管理員 (admin / password123) 與一般學生 (student / stu456)。
+新增 login.php (危險寫法 - Vulnerable Code)
+使用 mysqli 直接進行字串拼接，完全不防禦 SQL Injection。
+回傳時會顯示實際被執行的 SQL 語句（讓學生能親眼看見邏輯是如何被篡改的），並顯示成功登入或資料庫的語法錯誤訊息。
+新增 secure_login.php (安全寫法 - Secure Code)
+使用 PDO 預編譯陳述式 (Prepared Statements) 防禦。
+回傳時會顯示具備佔位符的 SQL 模板與實際綁定的參數，證明即便輸入攻擊字串，資料庫也只會將其視為「普通字串」處理，不會被當成 SQL 邏輯執行。
+修改 index.html (加入實戰演練區塊)
+在「攻擊情境」與「程式碼大對決」之間，新增了一個 實戰演練：親自體驗 SQL Injection 的互動區塊。
+提供了「初始化資料庫」按鈕。
+提供了兩個表單（分別針對危險寫法與安全寫法），學生可以自己輸入攻擊字串（預設已經填入 ' OR '1'='1 讓他們直接點擊測試）。
+修改 style.css & script.js
+加上了科技感十足的表單輸入框樣式（點擊時會有螢光外發光效果）。
+加上 fetch 的非同步請求邏輯，讓學生在點擊發送時不會重新整理頁面，而是直接在下方的小黑窗中呈現 PHP 回傳的執行結果，體驗非常流暢。
+🚀 如何進行測試 (XAMPP 環境)
+由於這些檔案現在包含 PHP 程式，請確保您的檔案放在 XAMPP 的 htdocs 目錄下（或者您已經將 XAMPP 虛擬目錄指向 d:\master\）。
+
+確保 XAMPP 的 Apache 與 MySQL 服務已啟動。
+透過瀏覽器進入該專案資料夾（例如：http://localhost/master/sqli-tutorial/index.html 或對應的本機伺服器網址）。
+第一步：先點擊網頁上的 「🔄 初始化資料庫」 按鈕，您會看到初始化成功的綠色勾勾提示。
+第二步：在 「❌ 測試危險寫法」 的表單中直接點擊發送，學生將會看到登入成功，並且獲得了管理員權限！
+第三步：在 「✅ 測試安全寫法」 中用同樣的攻擊字串發送，學生將會看到登入失敗，並了解到 PDO 預編譯的防護原理。

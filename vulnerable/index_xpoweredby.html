@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="專為高職生設計的資訊安全教學網站，深入解析 Server Leaks Information via X-Powered-By 漏洞。">
+    <title>X-Powered-By 資訊洩漏 完全解析</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Fira+Code:wght@400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="background-effects">
+        <div class="glow-orb orb-1" style="background: radial-gradient(circle, rgba(255,75,75,0.4) 0%, transparent 70%);"></div>
+        <div class="glow-orb orb-2" style="background: radial-gradient(circle, rgba(77,184,255,0.4) 0%, transparent 70%);"></div>
+    </div>
+
+    <header class="hero">
+        <div class="container">
+            <h1 class="glitch" data-text="Information Disclosure">X-Powered-By Header</h1>
+            <p class="subtitle">過度分享的伺服器：駭客偵察階段的免費大禮 (實戰篇)</p>
+        </div>
+    </header>
+
+    <main class="container">
+        <!-- 返回首頁 -->
+        <div style="margin-bottom: 20px;">
+            <a href="index.html" class="btn" style="text-decoration: none; display: inline-block; padding: 10px 20px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 5px; color: white;">⬅️ 返回首頁</a>
+        </div>
+
+        <!-- ====== 第 11 章：X-Powered-By ====== -->
+        <div style="margin: 60px 0; border-top: 2px dashed #ff4b4b; text-align: center; position: relative;">
+            <span style="background: var(--bg-color); padding: 0 20px; font-size: 1.5rem; color: #ff4b4b; position: relative; top: -18px; font-weight: bold;">實戰篇：伺服器資訊洩漏</span>
+        </div>
+
+        <!-- Intro -->
+        <section class="glass-panel" id="xpb-intro">
+            <h2><span class="icon">📡</span> 什麼是 X-Powered-By 資訊洩漏？</h2>
+            <div class="grid-3">
+                <div class="card">
+                    <h3>🕵️ 駭客的偵察階段</h3>
+                    <p>在發動真實攻擊前，駭客會進行「偵察 (Reconnaissance)」，試圖摸清目標網站使用的是什麼技術、框架與伺服器軟體，以便精準挑選攻擊武器。</p>
+                </div>
+                <div class="card warning">
+                    <h3>🏷️ 過度誠實的標頭</h3>
+                    <p><code>X-Powered-By</code> 與 <code>Server</code> 是 HTTP 回應標頭。預設情況下，許多後端語言 (如 PHP) 會自動在標頭中標示自己精確的版本號 (如 PHP/5.6.40)。</p>
+                </div>
+                <div class="card danger">
+                    <h3>🎯 致命的弱點比對</h3>
+                    <p>一旦獲得精確的版本號碼，攻擊者可以輕易地在 CVE 漏洞資料庫中比對該版本是否含有未修補的遠端代碼執行 (RCE) 弱點，直接一擊必殺。</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 實戰演練 -->
+        <section class="glass-panel" id="xpb-playground">
+            <h2><span class="icon">🕹️</span> 實戰演練：自動化掃描器模擬</h2>
+            <p class="scenario-desc">下方模擬了駭客使用自動化掃描工具 (如 curl 或 Nmap) 對伺服器發送 HTTP 請求。請點擊「😈 啟動掃描器」來觀看伺服器回傳的 HTTP Headers，看看會洩漏什麼資訊！</p>
+            
+            <div class="scenario-grid">
+                <!-- XPB Vulnerable -->
+                <div class="scenario-card attack">
+                    <div class="card-header" style="background: rgba(255, 75, 75, 0.2);">❌ 測試危險配置 (預設暴露版本)</div>
+                    <div class="card-body">
+                        <div style="background: #222; padding: 10px; border-radius: 8px 8px 0 0; border: 1px solid #444; border-bottom: none; display: flex; align-items: center;">
+                            <span style="color: #888; margin-right: 10px;">> curl -I https://shop.com/api</span>
+                        </div>
+                        <div id="result-xpb-vuln" style="min-height: 150px; background: #111; padding: 15px; border: 1px solid #444; border-radius: 0 0 8px 8px; color: #fff;">
+                            <span style="color: #666;">等待掃描...</span>
+                        </div>
+                        
+                        <button id="btn-xpb-attack" class="btn danger-btn" style="width: 100%; margin-top: 15px; padding: 10px; font-size: 1.1em; cursor: pointer; border-radius: 6px; border: none; font-weight: bold; box-shadow: 0 0 10px rgba(255,75,75,0.5);">😈 啟動掃描器獲取 Headers</button>
+                    </div>
+                </div>
+
+                <!-- XPB Secure -->
+                <div class="scenario-card normal">
+                    <div class="card-header" style="background: rgba(77, 255, 184, 0.2);">✅ 測試安全配置 (隱藏標頭)</div>
+                    <div class="card-body">
+                        <div style="background: #222; padding: 10px; border-radius: 8px 8px 0 0; border: 1px solid #444; border-bottom: none; display: flex; align-items: center;">
+                            <span style="color: #888; margin-right: 10px;">> curl -I https://shop.com/api</span>
+                        </div>
+                        <div id="result-xpb-secure" style="min-height: 150px; background: #111; padding: 15px; border: 1px solid #444; border-radius: 0 0 8px 8px; color: #fff;">
+                            <span style="color: #666;">等待掃描...</span>
+                        </div>
+                        
+                        <button id="btn-xpb-secure-attack" class="btn warning-btn" style="width: 100%; margin-top: 15px; padding: 10px; font-size: 1.1em; cursor: pointer; border-radius: 6px; border: none; font-weight: bold; box-shadow: 0 0 10px rgba(255,184,77,0.5);">😈 啟動掃描器獲取 Headers</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 程式碼對比 -->
+        <section class="glass-panel" id="xpb-code-comparison">
+            <h2><span class="icon">⚖️</span> 程式碼與系統對決：如何隱藏標頭？</h2>
+            <div class="comparison-grid">
+                <!-- Vulnerable -->
+                <div class="code-window vulnerable">
+                    <div class="window-header">
+                        <span class="dot red"></span>
+                        <span class="dot yellow"></span>
+                        <span class="dot green"></span>
+                        <span class="filename">php.ini (危險的預設配置 ❌)</span>
+                    </div>
+                    <div class="window-body">
+<pre><code class="language-ini">
+<span class="comment">; PHP 預設情況下會開啟 expose_php</span>
+<span class="comment">; 這會自動在所有 HTTP 回應中加入 X-Powered-By 標頭</span>
+<span class="highlight-line-danger">expose_php = On</span>
+
+<span class="comment">; Web 伺服器 (Apache/Nginx) 預設也會輸出詳細版本</span>
+<span class="comment">; ServerTokens OS  (在 Apache 中)</span>
+</code></pre>
+                    </div>
+                </div>
+
+                <!-- Secure -->
+                <div class="code-window secure">
+                    <div class="window-header">
+                        <span class="dot red"></span>
+                        <span class="dot yellow"></span>
+                        <span class="dot green"></span>
+                        <span class="filename">系統配置 (安全的防護方式 ✅)</span>
+                    </div>
+                    <div class="window-body">
+<pre><code class="language-ini">
+<span class="comment">; ✨ 最根本的做法：在 php.ini 中將其關閉</span>
+<span class="highlight-line-safe">expose_php = Off</span>
+
+<span class="comment">; 另外，若無法修改 php.ini，也可在 PHP 代碼中移除：</span>
+<span class="comment">; header_remove('X-Powered-By');</span>
+
+<span class="comment">; ✨ 同步隱藏 Apache 伺服器資訊 (於 httpd.conf)：</span>
+<span class="highlight-line-safe">ServerTokens Prod</span>
+<span class="highlight-line-safe">ServerSignature Off</span>
+</code></pre>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 開發建議 -->
+        <section class="glass-panel" id="xpb-recommendations">
+            <h2><span class="icon">🛡️</span> 開發與維運建議：隱晦式安全 (Security through obscurity)</h2>
+            <div class="rec-grid">
+                <div class="rec-card">
+                    <div class="rec-icon">🥷</div>
+                    <h3>落實模糊化原則</h3>
+                    <p>雖然隱藏資訊並不能修復漏洞，但能顯著提升駭客的攻擊成本與時間，減少被大規模自動化掃描器 (Bots) 盲目鎖定與攻擊的機率。</p>
+                </div>
+                
+                <div class="rec-card">
+                    <div class="rec-icon">🚫</div>
+                    <h3>全面移除冗餘標頭</h3>
+                    <p>除了 X-Powered-By 與 Server 標頭外，也應注意 `X-AspNet-Version`、框架特有標頭 (如 `X-Generator`) 等無助於功能但會洩漏技術棧的資訊。</p>
+                </div>
+
+                <div class="rec-card">
+                    <div class="rec-icon">🔄</div>
+                    <h3>保持系統更新 (治本之道)</h3>
+                    <p>資訊隱藏是「防君子不防小人」的第一道防線，核心防禦依然是保持作業系統、Web 伺服器與 PHP 處於官方維護支援的生命週期內，並定時安裝安全性更新。</p>
+                </div>
+
+                <div class="rec-card">
+                    <div class="rec-icon">🔍</div>
+                    <h3>利用 ZAP 或 Nessus 稽核</h3>
+                    <p>將「標頭資訊洩漏」納入 CI/CD 的自動化資安掃描流程中，確保每次伺服器環境升級或搬遷時，這些敏感標頭不會悄悄地被重新開啟。</p>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer>
+        <p>為高職生設計的資訊安全教育平台 | 守護代碼，從你我做起 💻</p>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>

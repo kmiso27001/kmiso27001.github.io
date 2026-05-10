@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="專為高職生設計的資訊安全教學網站，深入解析 Cookie No HttpOnly Flag 漏洞。">
+    <title>Cookie No HttpOnly Flag 完全解析</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Fira+Code:wght@400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="background-effects">
+        <div class="glow-orb orb-1" style="background: radial-gradient(circle, rgba(255,75,75,0.4) 0%, transparent 70%);"></div>
+        <div class="glow-orb orb-2" style="background: radial-gradient(circle, rgba(150,75,255,0.4) 0%, transparent 70%);"></div>
+    </div>
+
+    <header class="hero">
+        <div class="container">
+            <h1 class="glitch" data-text="HttpOnly Flag">Cookie No HttpOnly Flag</h1>
+            <p class="subtitle">會話劫持危機：當 XSS 遇上不設防的 Cookie (實戰篇)</p>
+        </div>
+    </header>
+
+    <main class="container">
+        <!-- 返回首頁 -->
+        <div style="margin-bottom: 20px;">
+            <a href="index.html" class="btn" style="text-decoration: none; display: inline-block; padding: 10px 20px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 5px; color: white;">⬅️ 返回首頁</a>
+        </div>
+
+        <!-- ====== 第 9 章：Cookie No HttpOnly Flag ====== -->
+        <div style="margin: 60px 0; border-top: 2px dashed #ff4b4b; text-align: center; position: relative;">
+            <span style="background: var(--bg-color); padding: 0 20px; font-size: 1.5rem; color: #ff4b4b; position: relative; top: -18px; font-weight: bold;">實戰篇：不設防的 Cookie</span>
+        </div>
+
+        <!-- Intro -->
+        <section class="glass-panel" id="cookie-intro">
+            <h2><span class="icon">🍪</span> 為什麼 Cookie 需要 HttpOnly？</h2>
+            <div class="grid-3">
+                <div class="card">
+                    <h3>🎭 身份憑證暴露</h3>
+                    <p>預設情況下，瀏覽器允許 JavaScript 透過 <code>document.cookie</code> 讀取 Cookie。若其中包含 Session ID，一旦被竊取，駭客即可冒充用戶身份。</p>
+                </div>
+                <div class="card warning">
+                    <h3>🕷️ XSS 聯集攻擊</h3>
+                    <p>如果網站存在 XSS (跨站腳本) 漏洞，駭客可以注入惡意腳本讀取使用者的 Cookie，並將其傳送至自己的伺服器，造成會話劫持 (Session Hijacking)。</p>
+                </div>
+                <div class="card danger">
+                    <h3>🛡️ 關鍵的一道鎖</h3>
+                    <p>HttpOnly 標籤能指示瀏覽器「禁止前端 JavaScript 存取該 Cookie」。這雖然不能阻止 XSS 的發生，但能阻斷駭客最致命的目標：竊取會話憑證。</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 實戰演練 -->
+        <section class="glass-panel" id="cookie-playground">
+            <h2><span class="icon">🕹️</span> 實戰演練：XSS 竊取 Cookie</h2>
+            <p class="scenario-desc">下方模擬了一個存在反射型 XSS 漏洞的留言板。請點擊「😈 注入惡意 XSS 腳本」來模擬駭客的攻擊行為，觀察危險配置與安全配置下，Cookie 是否會被腳本讀取到。</p>
+            
+            <div class="scenario-grid">
+                <!-- Cookie Vulnerable -->
+                <div class="scenario-card attack">
+                    <div class="card-header" style="background: rgba(255, 75, 75, 0.2);">❌ 測試危險配置 (缺少 HttpOnly)</div>
+                    <div class="card-body">
+                        <div style="background: #222; padding: 10px; border-radius: 8px 8px 0 0; border: 1px solid #444; border-bottom: none; display: flex; align-items: center; overflow: hidden;">
+                            <span style="color: #888; margin-right: 10px; white-space: nowrap;">🌐 URL:</span>
+                            <span id="url-cookie-vuln" style="color: #ffb84d; font-family: monospace; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">https://example.com/cookie_vulnerable.php</span>
+                        </div>
+                        <iframe id="iframe-cookie-vuln" src="cookie_vulnerable.php" style="width: 100%; height: 180px; border: 1px solid #444; border-radius: 0 0 8px 8px; background: #fff;"></iframe>
+                        
+                        <button id="btn-cookie-attack" class="btn danger-btn" style="width: 100%; margin-top: 15px; padding: 10px; font-size: 1.1em; cursor: pointer; border-radius: 6px; border: none; font-weight: bold; box-shadow: 0 0 10px rgba(255,75,75,0.5);">😈 注入惡意 XSS 腳本</button>
+                    </div>
+                </div>
+
+                <!-- Cookie Secure -->
+                <div class="scenario-card normal">
+                    <div class="card-header" style="background: rgba(77, 255, 184, 0.2);">✅ 測試安全配置 (開啟 HttpOnly)</div>
+                    <div class="card-body">
+                        <div style="background: #222; padding: 10px; border-radius: 8px 8px 0 0; border: 1px solid #444; border-bottom: none; display: flex; align-items: center; overflow: hidden;">
+                            <span style="color: #888; margin-right: 10px; white-space: nowrap;">🌐 URL:</span>
+                            <span id="url-cookie-secure" style="color: #4dffb8; font-family: monospace; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">https://example.com/cookie_secure.php</span>
+                        </div>
+                        <iframe id="iframe-cookie-secure" src="cookie_secure.php" style="width: 100%; height: 180px; border: 1px solid #444; border-radius: 0 0 8px 8px; background: #fff;"></iframe>
+                        
+                        <button id="btn-cookie-secure-attack" class="btn warning-btn" style="width: 100%; margin-top: 15px; padding: 10px; font-size: 1.1em; cursor: pointer; border-radius: 6px; border: none; font-weight: bold; box-shadow: 0 0 10px rgba(255,184,77,0.5);">😈 注入惡意 XSS 腳本</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 程式碼對比 -->
+        <section class="glass-panel" id="cookie-code-comparison">
+            <h2><span class="icon">⚖️</span> 程式碼大對決：HttpOnly 標籤設定</h2>
+            <div class="comparison-grid">
+                <!-- Vulnerable -->
+                <div class="code-window vulnerable">
+                    <div class="window-header">
+                        <span class="dot red"></span>
+                        <span class="dot yellow"></span>
+                        <span class="dot green"></span>
+                        <span class="filename">PHP (危險的配置方式 ❌)</span>
+                    </div>
+                    <div class="window-body">
+<pre><code class="language-php">
+<span class="comment">// 🚨 錯誤 1：直接使用預設 session_start()，且 php.ini 未配置安全選項</span>
+session_start();
+
+<span class="comment">// 🚨 錯誤 2：手動設置 Cookie 時忽略了 HttpOnly 參數</span>
+<span class="comment">// 參數清單中最後兩個 boolean 代表 Secure 與 HttpOnly，此處皆為預設的 false</span>
+<span class="highlight-line-danger">setcookie("user_auth", "token_value", time()+3600, "/");</span>
+
+</code></pre>
+                    </div>
+                </div>
+
+                <!-- Secure -->
+                <div class="code-window secure">
+                    <div class="window-header">
+                        <span class="dot red"></span>
+                        <span class="dot yellow"></span>
+                        <span class="dot green"></span>
+                        <span class="filename">PHP (安全的配置方式 ✅)</span>
+                    </div>
+                    <div class="window-body">
+<pre><code class="language-php">
+<span class="comment">// ✨ 正確 A：全局配置 (推薦)，在 session_start() 之前設置</span>
+session_start([
+    'cookie_httponly' => true,
+    'cookie_secure' => true, <span class="comment">// 僅透過 HTTPS 傳輸</span>
+    'samesite' => 'Lax'      <span class="comment">// 防範 CSRF</span>
+]);
+
+<span class="comment">// ✨ 正確 B：手動設置特定 Cookie</span>
+$name = "user_preference";
+$value = "dark_mode";
+$expire = time() + 3600;
+$path = "/";
+$domain = "";
+$secure = true;   <span class="comment">// 僅 HTTPS</span>
+<span class="highlight-line-safe">$httponly = true; // 關鍵：禁止 JavaScript 存取</span>
+<span class="highlight-line-safe">setcookie($name, $value, $expire, $path, $domain, $secure, $httponly);</span>
+</code></pre>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 開發建議 -->
+        <section class="glass-panel" id="cookie-recommendations">
+            <h2><span class="icon">🛡️</span> 開發建議：全方位保護 Session</h2>
+            <div class="rec-grid">
+                <div class="rec-card">
+                    <div class="rec-icon">🧱</div>
+                    <h3>深度防禦 (Defense in Depth)</h3>
+                    <p>HttpOnly 並不能防止 XSS 攻擊本身，但能大幅降低 XSS 發生後的損害（防止 Session 被盜）。應與 CSP 策略、輸入過濾並行使用。</p>
+                </div>
+                
+                <div class="rec-card">
+                    <div class="rec-icon">🔒</div>
+                    <h3>強制 Secure 屬性</h3>
+                    <p>除了 HttpOnly，對於身份憑證應同時開啟 Secure 標籤，確保 Cookie 不會在不安全的 HTTP 環境下以明文傳輸，防止中間人攻擊。</p>
+                </div>
+
+                <div class="rec-card">
+                    <div class="rec-icon">⏱️</div>
+                    <h3>Session 過期與重建機制</h3>
+                    <p>縮短 Session 的有效時間 (TTL)，並在用戶登入/登出、提權時重新生成 Session ID (<code>session_regenerate_id()</code>)，降低憑證被利用的窗口期。</p>
+                </div>
+
+                <div class="rec-card">
+                    <div class="rec-icon">🔍</div>
+                    <h3>定期審計與檢查</h3>
+                    <p>使用瀏覽器開發者工具的 "Application" 面板或 OWASP ZAP 掃描，定期檢查所有敏感 Cookie 的 HttpOnly 與 Secure 欄位是否已被正確設定。</p>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer>
+        <p>為高職生設計的資訊安全教育平台 | 守護代碼，從你我做起 💻</p>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>

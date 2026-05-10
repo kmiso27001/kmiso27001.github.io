@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="專為高職生設計的網站安全教學網站，深入解析 Vulnerable Code 與 Secure Code 的差異。">
+    <title>網站安全</title>
+    <link rel="stylesheet" href="style.css">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Fira+Code:wght@400;600&display=swap"
+        rel="stylesheet">
+</head>
+
+<body>
+    <div class="background-effects">
+        <div class="glow-orb orb-1"></div>
+        <div class="glow-orb orb-2"></div>
+    </div>
+
+    <header class="hero">
+        <div class="container">
+            <h1 class="glitch" data-text="網站安全教學網站">網站安全教學網站</h1>
+            <p class="subtitle">網站安全頭號公敵：從原理到防禦的實戰指南</p>
+        </div>
+    </header>
+
+    <main class="container">
+        <!-- 主選單入口 -->
+        <section class="glass-panel" style="text-align: center; padding: 60px 20px;">
+            <h2 style="font-size: 2rem; margin-bottom: 20px;">請選擇你要進行的課程：</h2>
+            <p style="color: #aaa; margin-bottom: 40px; font-size: 1.1rem;">您可以點擊下方按鈕，分別體驗「基礎認證繞過」與「進階時間盲注」的實戰教學。</p>
+
+            <div style="display: flex; gap: 30px; justify-content: center; flex-wrap: wrap;">
+                <!-- 基礎篇入口 -->
+                <div class="card"
+                    style="flex: 1; min-width: 300px; max-width: 400px; padding: 30px; transition: transform 0.3s;">
+                    <div style="font-size: 4rem; margin-bottom: 20px;">🛡️</div>
+                    <h3 style="font-size: 1.5rem; margin-bottom: 15px;">基礎篇：認證繞過</h3>
+                    <p style="color: #bbb; margin-bottom: 25px;">了解 SQL Injection 的基本原理，並實戰體驗如何使用 `' OR '1'='1` 繞過系統登入。
+                    </p>
+                    <a href="index_sqli.html" class="btn success-btn"
+                        style="display: block; text-decoration: none; padding: 15px; font-size: 1.2rem; border-radius: 8px;">進入基礎課程
+                        ➔</a>
+                </div>
+
+                <!-- 進階篇入口 -->
+                <div class="card warning"
+                    style="flex: 1; min-width: 300px; max-width: 400px; padding: 30px; transition: transform 0.3s;">
+                    <div style="font-size: 4rem; margin-bottom: 20px;">⏱️</div>
+                    <h3 style="font-size: 1.5rem; margin-bottom: 15px;">進階篇：時間盲注</h3>
+                    <p style="color: #bbb; margin-bottom: 25px;">挑戰更隱蔽的攻擊手法，使用 SLEEP() 函數，並觀看駭客自動盲注模擬器如何挖出隱藏資料。</p>
+                    <a href="index_time_sqli.html" class="btn action-btn"
+                        style="display: block; text-decoration: none; padding: 15px; font-size: 1.2rem; border-radius: 8px;">進入進階課程
+                        ➔</a>
+                </div>
+
+                <!-- CSRF 篇入口 -->
+                <div class="card danger"
+                    style="flex: 1; min-width: 300px; max-width: 400px; padding: 30px; transition: transform 0.3s; border: 1px solid #ff4b4b;">
+                    <div style="font-size: 4rem; margin-bottom: 20px;">🎭</div>
+                    <h3 style="font-size: 1.5rem; margin-bottom: 15px;">實戰篇：CSRF 偽造</h3>
+                    <p style="color: #bbb; margin-bottom: 25px;">深入了解跨站請求偽造 (CSRF) 原理，體驗駭客如何利用您的登入狀態發起非預期的惡意轉帳。</p>
+                    <a href="index_csrf.html" class="btn danger-btn"
+                        style="display: block; text-decoration: none; padding: 15px; font-size: 1.2rem; border-radius: 8px;">進入
+                        CSRF 課程
+                        ➔</a>
+                </div>
+
+                <!-- CSP 篇入口 -->
+                <div class="card"
+                    style="flex: 1; min-width: 300px; max-width: 400px; padding: 30px; transition: transform 0.3s; border: 1px solid #4dffb8;">
+                    <div style="font-size: 4rem; margin-bottom: 20px;">🛡️</div>
+                    <h3 style="font-size: 1.5rem; margin-bottom: 15px;">防禦篇：CSP 策略</h3>
+                    <p style="color: #bbb; margin-bottom: 25px;">實作 Content Security Policy (內容安全策略)，從根本上封殺 XSS
+                        惡意腳本執行，保護使用者資料。</p>
+                    <a href="index_csp.html" class="btn success-btn"
+                        style="display: block; text-decoration: none; padding: 15px; font-size: 1.2rem; border-radius: 8px; background: rgba(77,255,184,0.2); color: #4dffb8; border: 1px solid #4dffb8;">進入
+                        CSP 課程
+                        ➔</a>
+                </div>
+
+                <!-- 目錄遍歷篇入口 -->
+                <div class="card warning"
+                    style="flex: 1; min-width: 300px; max-width: 400px; padding: 30px; transition: transform 0.3s; border: 1px solid #ffb84d;">
+                    <div style="font-size: 4rem; margin-bottom: 20px;">📁</div>
+                    <h3 style="font-size: 1.5rem; margin-bottom: 15px;">漏洞探測：目錄遍歷</h3>
+                    <p style="color: #bbb; margin-bottom: 25px;">了解 Directory Browsing
+                        的成因，體驗駭客如何透過未關閉的目錄索引功能竊取敏感備份檔與伺服器組態。</p>
+                    <a href="index_directory.html" class="btn warning-btn"
+                        style="display: block; text-decoration: none; padding: 15px; font-size: 1.2rem; border-radius: 8px; background: rgba(255,184,77,0.2); color: #ffb84d; border: 1px solid #ffb84d;">進入目錄遍歷課程
+                        ➔</a>
+                </div>
+
+                <!-- 點擊劫持篇入口 -->
+                <div class="card danger"
+                    style="flex: 1; min-width: 300px; max-width: 400px; padding: 30px; transition: transform 0.3s; border: 1px solid #ff4b4b;">
+                    <div style="font-size: 4rem; margin-bottom: 20px;">🖱️</div>
+                    <h3 style="font-size: 1.5rem; margin-bottom: 15px;">實戰篇：點擊劫持</h3>
+                    <p style="color: #bbb; margin-bottom: 25px;">深入探討 Clickjacking (使用者介面紅利攻擊)，體驗駭客如何用透明 iframe
+                        誘導您誤刪自己的帳號！</p>
+                    <a href="index_clickjacking.html" class="btn danger-btn"
+                        style="display: block; text-decoration: none; padding: 15px; font-size: 1.2rem; border-radius: 8px;">進入點擊劫持課程
+                        ➔</a>
+                </div>
+
+                <!-- 參數篡改篇入口 -->
+                <div class="card warning"
+                    style="flex: 1; min-width: 300px; max-width: 400px; padding: 30px; transition: transform 0.3s; border: 1px solid #ffb84d;">
+                    <div style="font-size: 4rem; margin-bottom: 20px;">🕵️</div>
+                    <h3 style="font-size: 1.5rem; margin-bottom: 15px;">實戰篇：參數篡改</h3>
+                    <p style="color: #bbb; margin-bottom: 25px;">剖析 Parameter Tampering 手法，學習為何「永遠不要信任客戶端輸入」，並防止商品被 1
+                        元賤賣！</p>
+                    <a href="index_param_tampering.html" class="btn warning-btn"
+                        style="display: block; text-decoration: none; padding: 15px; font-size: 1.2rem; border-radius: 8px; background: rgba(255,184,77,0.2); color: #ffb84d; border: 1px solid #ffb84d;">進入參數篡改課程
+                        ➔</a>
+                </div>
+
+                <!-- 脆弱的 JS 函式庫篇入口 -->
+                <div class="card danger"
+                    style="flex: 1; min-width: 300px; max-width: 400px; padding: 30px; transition: transform 0.3s; border: 1px solid #ff4b4b;">
+                    <div style="font-size: 4rem; margin-bottom: 20px;">🧩</div>
+                    <h3 style="font-size: 1.5rem; margin-bottom: 15px;">實戰篇：Vulnerable JS Library</h3>
+                    <p style="color: #bbb; margin-bottom: 25px;">探討引用老舊第三方 JS 套件（如 jQuery 1.x）所帶來的潛在 XSS 漏洞，並學習如何透過 SRI
+                        增強防護。</p>
+                    <a href="index_vulnerable_js.html" class="btn danger-btn"
+                        style="display: block; text-decoration: none; padding: 15px; font-size: 1.2rem; border-radius: 8px;">進入脆弱套件課程
+                        ➔</a>
+                </div>
+
+                <!-- Cookie HttpOnly 篇入口 -->
+                <div class="card warning"
+                    style="flex: 1; min-width: 300px; max-width: 400px; padding: 30px; transition: transform 0.3s; border: 1px solid #ffb84d;">
+                    <div style="font-size: 4rem; margin-bottom: 20px;">🍪</div>
+                    <h3 style="font-size: 1.5rem; margin-bottom: 15px;">實戰篇：不設防的 Cookie</h3>
+                    <p style="color: #bbb; margin-bottom: 25px;">探討 Cookie 欠缺 HttpOnly 標籤的風險，體驗駭客如何利用 XSS
+                        漏洞輕易竊取使用者的會話憑證！</p>
+                    <a href="index_cookie_httponly.html" class="btn warning-btn"
+                        style="display: block; text-decoration: none; padding: 15px; font-size: 1.2rem; border-radius: 8px; background: rgba(255,184,77,0.2); color: #ffb84d; border: 1px solid #ffb84d;">進入
+                        Cookie 課程
+                        ➔</a>
+                </div>
+
+                <!-- SameSite 屬性篇入口 -->
+                <div class="card warning"
+                    style="flex: 1; min-width: 300px; max-width: 400px; padding: 30px; transition: transform 0.3s; border: 1px solid #ffb84d;">
+                    <div style="font-size: 4rem; margin-bottom: 20px;">🏷️</div>
+                    <h3 style="font-size: 1.5rem; margin-bottom: 15px;">實戰篇：欠缺 SameSite 屬性</h3>
+                    <p style="color: #bbb; margin-bottom: 25px;">探討 Cookie 欠缺 SameSite 標籤的跨站請求風險，體驗駭客如何利用隱性信任發起 CSRF 攻擊！
+                    </p>
+                    <a href="index_samesite.html" class="btn warning-btn"
+                        style="display: block; text-decoration: none; padding: 15px; font-size: 1.2rem; border-radius: 8px; background: rgba(255,184,77,0.2); color: #ffb84d; border: 1px solid #ffb84d;">進入
+                        SameSite 課程
+                        ➔</a>
+                </div>
+
+                <!-- X-Powered-By 資訊洩漏篇入口 -->
+                <div class="card warning"
+                    style="flex: 1; min-width: 300px; max-width: 400px; padding: 30px; transition: transform 0.3s; border: 1px solid #ffb84d;">
+                    <div style="font-size: 4rem; margin-bottom: 20px;">📡</div>
+                    <h3 style="font-size: 1.5rem; margin-bottom: 15px;">實戰篇：伺服器資訊洩漏</h3>
+                    <p style="color: #bbb; margin-bottom: 25px;">探討 X-Powered-By
+                        標頭如何洩漏後端技術與版本號，了解這份「免費大禮」是如何幫助駭客進行精準打擊的！</p>
+                    <a href="index_xpoweredby.html" class="btn warning-btn"
+                        style="display: block; text-decoration: none; padding: 15px; font-size: 1.2rem; border-radius: 8px; background: rgba(255,184,77,0.2); color: #ffb84d; border: 1px solid #ffb84d;">進入資訊洩漏課程
+                        ➔</a>
+                </div>
+
+                <!-- Server 標頭篇入口 -->
+                <div class="card warning"
+                    style="flex: 1; min-width: 300px; max-width: 400px; padding: 30px; transition: transform 0.3s; border: 1px solid #ffb84d;">
+                    <div style="font-size: 4rem; margin-bottom: 20px;">🖥️</div>
+                    <h3 style="font-size: 1.5rem; margin-bottom: 15px;">實戰篇：環境特徵外洩</h3>
+                    <p style="color: #bbb; margin-bottom: 25px;">探討 Server 標頭如何暴露精確的 Web 伺服器與作業系統版本，學習如何套用「最小資訊揭露原則」！
+                    </p>
+                    <a href="index_serverheader.html" class="btn warning-btn"
+                        style="display: block; text-decoration: none; padding: 15px; font-size: 1.2rem; border-radius: 8px; background: rgba(255,184,77,0.2); color: #ffb84d; border: 1px solid #ffb84d;">進入環境外洩課程
+                        ➔</a>
+                </div>
+
+                <!-- nosniff 標頭篇入口 -->
+                <div class="card danger"
+                    style="flex: 1; min-width: 300px; max-width: 400px; padding: 30px; transition: transform 0.3s; border: 1px solid #ff4b4b;">
+                    <div style="font-size: 4rem; margin-bottom: 20px;">🐶</div>
+                    <h3 style="font-size: 1.5rem; margin-bottom: 15px;">實戰篇：MIME 嗅探危機</h3>
+                    <p style="color: #bbb; margin-bottom: 25px;">探討 X-Content-Type-Options
+                        缺失的風險，體驗瀏覽器的「貼心功能」如何把純文字檔案變成惡意腳本執行！</p>
+                    <a href="index_nosniff.html" class="btn danger-btn"
+                        style="display: block; text-decoration: none; padding: 15px; font-size: 1.2rem; border-radius: 8px;">進入
+                        MIME 嗅探課程
+                        ➔</a>
+                </div>
+            </div>
+
+            <!-- 初始化按鈕保留在首頁 -->
+            <div class="playground-controls"
+                style="margin-top: 50px; padding: 25px; background: rgba(255,255,255,0.05); border-radius: 12px; border-left: 5px solid var(--text-accent); display: inline-block; text-align: left;">
+                <h3 style="margin-bottom: 15px;"><span class="icon">⚙️</span> 環境重置</h3>
+                <p style="margin-bottom: 15px;">在開始任一課程前，建議您先初始化資料庫結構與假資料，以確保實戰演練順利進行。</p>
+                <button id="btn-init-db" class="btn danger-btn" style="padding: 10px 20px; font-size: 1.1rem;">🔄 初始化資料庫
+                    (重置所有資料)</button>
+                <span id="init-status" style="margin-left: 15px; font-weight: bold;"></span>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <p>為高職生設計的資訊安全教育平台 | 守護代碼，從你我做起 💻</p>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+
+</html>

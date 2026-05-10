@@ -1,0 +1,91 @@
+背景資訊
+1. 已經完成上兩階段的互動(sql injection) 和 Time based 的 SQL Injection 和 Absence of Anti-CSRF tokens 和 Content Security Policy(CSP) Header Not Set
+2. 這次要實作的是 Directory Browsing
+3. 參考資料如下
+
+Directory Browsing
+1. 簡介 (Introduction)
+(1) 目錄遍歷 (Directory Browsing) 是一種 Web 伺服器配置錯誤，當使
+用者請求一個不包含預設首頁檔案（如 index.php 或 index.html）
+的目錄時，伺服器會自動列出該目錄下的所有檔案與子目錄。
+(2) 其核心問題在於伺服器端的權限控管過於寬鬆，未對自動生成索引
+（Auto-indexing）功能進行限制。
+(3) 攻擊者可藉此輕鬆查閱網站的檔案結構，進而發現備份檔案
+如 .bak、.zip）、組態設定檔（如 config.php.dist）、敏感日誌或尚
+未公開的原始碼。這通常是執行進階攻擊（如滲透測試中的偵察階
+段）的重要資訊來源。
+2. 範例 (Example Scenario)
+假設某開發者將資料庫連接資訊存放在 /config 目錄下，且該目錄沒有
+首頁檔案：
+(1) 正常訪問： 使用者訪問 https://example.com/index.php 看到正常
+網頁。
+(2) 漏洞探測： 攻擊者嘗試訪問 https://example.com/uploads/ 或
+https://example.com/config/。
+(3) 觸發洩漏： 伺服器回傳一個名為 "Index of /config" 的頁面，展示
+如下內容：
+[DIR] Parent Directory
+[FILE] db_connection.php.bak
+[FILE] secret_key.txt
+攻擊擴大： 攻擊者下載 .bak 檔案，取得資料庫帳號密碼，最終導致
+整個資料庫被竊取。
+3. 危險寫法 (Vulnerable Configuration)
+目錄遍歷通常不是 PHP 程式碼本身的問題，而是伺服器環境配置
+（Apache/Nginx）的疏忽。以下是常見的危險配置：
+(1) Apache (.htaccess 或 httpd.conf):
+# 關鍵字 'Indexes' 會啟用目錄列表功能
+Options +Indexes +FollowSymLinks
+(2) Nginx (nginx.conf):
+location / {
+# 將 autoindex 設置為 on 會開啟目錄遍歷
+autoindex on;
+}
+4. 安全寫法 (Secure Mitigation)
+要修復此問題，需從伺服器層級關閉自動索引功能，或在應用程式層級
+進行防禦。
+(1) 方法 A：修改伺服器配置 (推薦)
+➢ 在 Apache 的 .htaccess 中明確禁用索引：
+Options -Indexes
+➢ 在 Nginx 中，應確保 autoindex 設為 off。
+(2) 方法 B：放置空首頁檔案 (基礎防禦)
+在每個不希望被遍歷的目錄下放置一個空的 index.php 或
+index.html。當伺服器發現該檔案存在時，便不會列出目錄清單。
+<?php
+// index.php
+// 重導向回首頁或顯示 403 錯誤
+header("HTTP/1.1 403 Forbidden");
+exit("Access Denied");
+?>
+(3) 方法 C：PHP 權限檢查 (動態防禦)
+如果目錄記憶體放的是使用者上傳的檔案，應透過 PHP 腳本控制存
+取，而非直接開放目錄路徑：
+// download.php
+session_start();
+if (!isset($_SESSION['user_id'])) {
+die("未授權存取");
+}
+// 透過腳本讀取檔案流，隱藏真實檔案系統路徑
+readfile("/secure_storage/user_files/" . $_GET['file']);
+5. 開發建議 (Development Recommendations)
+從資管與系統管理維度出發，建議採取以下多層次防禦策略：
+(1) 最小化暴露面 (Attack Surface Reduction)： 確保生產環境
+（Production）中所有 Web 伺服器的 Auto-indexing 功能皆已關
+閉。這是資安合規性檢查（如 ISO 27001）的基本要求。
+(2) 檔案命名規範與路徑隱蔽： 敏感檔案不應存放在 Web Root（網頁根
+目錄）下。建議將設定檔與備份檔移動至瀏覽器無法直接存取的目
+錄。
+(3) 定期執行弱點掃描： 利用掃描工具（如您論文中提到的 OWASP ZAP
+或 Nikto）自動探測網站目錄是否存在自動索引漏洞。
+(4) 自定義錯誤頁面： 配置伺服器當發生 403（Forbidden）或 404（Not
+Found）時顯示統一的錯誤頁面，避免洩漏伺服器版本（如
+Apache/2.4.41）等額外技術資訊。
+(5) 嚴格的權限管理 (ACL)： 針對存放敏感資料的目錄，應從作業系統層
+級（Linux Permissions）限制 Web 服務帳號（如 www-data）僅具有
+必要的讀寫權限
+
+須完成的工作
+增加一個Directory Browsing的互動網頁,當然,index.html也要做對應的修改
+以下是我期望的結果
+1. 網站外觀要和上一階段一樣有科技感
+2. 不論是危險寫法或安全寫法
+
+

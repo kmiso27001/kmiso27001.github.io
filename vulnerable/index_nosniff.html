@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="專為高職生設計的資訊安全教學網站，深入解析 X-Content-Type-Options Header Missing 漏洞。">
+    <title>MIME 嗅探與 nosniff 完全解析</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Fira+Code:wght@400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="background-effects">
+        <div class="glow-orb orb-1" style="background: radial-gradient(circle, rgba(255,75,75,0.4) 0%, transparent 70%);"></div>
+        <div class="glow-orb orb-2" style="background: radial-gradient(circle, rgba(150,75,255,0.4) 0%, transparent 70%);"></div>
+    </div>
+
+    <header class="hero">
+        <div class="container">
+            <h1 class="glitch" data-text="MIME Sniffing">X-Content-Type-Options</h1>
+            <p class="subtitle">致命的瀏覽器「貼心」功能：當純文字被當作惡意腳本執行</p>
+        </div>
+    </header>
+
+    <main class="container">
+        <!-- 返回首頁 -->
+        <div style="margin-bottom: 20px;">
+            <a href="index.html" class="btn" style="text-decoration: none; display: inline-block; padding: 10px 20px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 5px; color: white;">⬅️ 返回首頁</a>
+        </div>
+
+        <!-- ====== 第 13 章：X-Content-Type-Options ====== -->
+        <div style="margin: 60px 0; border-top: 2px dashed #ff4b4b; text-align: center; position: relative;">
+            <span style="background: var(--bg-color); padding: 0 20px; font-size: 1.5rem; color: #ff4b4b; position: relative; top: -18px; font-weight: bold;">實戰篇：MIME 嗅探危機</span>
+        </div>
+
+        <!-- Intro -->
+        <section class="glass-panel" id="nosniff-intro">
+            <h2><span class="icon">🐶</span> 什麼是 MIME 嗅探 (MIME Sniffing)？</h2>
+            <div class="grid-3">
+                <div class="card">
+                    <h3>🎭 偽裝的檔案</h3>
+                    <p>駭客上傳了一個名為 <code>avatar.jpg</code> 或 <code>user_bio.txt</code> 的檔案，但檔案內容實際上是惡意的 JavaScript 代碼。</p>
+                </div>
+                <div class="card warning">
+                    <h3>🕵️ 瀏覽器的自動猜測</h3>
+                    <p>當這個檔案被其他網頁以 <code>&lt;script src="..."&gt;</code> 引用時，如果伺服器沒有強制規定 MIME 類型，瀏覽器會自作主張去「嗅探」檔案內容，發現是程式碼後就會執行它。</p>
+                </div>
+                <div class="card danger">
+                    <h3>🛑 nosniff 的防禦力</h3>
+                    <p>加入 <code>X-Content-Type-Options: nosniff</code> 標頭可以強制瀏覽器「絕對遵守」伺服器宣告的類型。若類型是 <code>text/plain</code>，瀏覽器就會拒絕把它當作腳本執行，封殺此類 XSS 攻擊。</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 實戰演練 -->
+        <section class="glass-panel" id="nosniff-playground">
+            <h2><span class="icon">🕹️</span> 實戰演練：純文字檔案變成惡意腳本</h2>
+            <p class="scenario-desc">下方模擬了一個駭客上傳的純文字檔案 (Content-Type: text/plain)，檔案裡寫滿了惡意腳本。請點擊「😈 嘗試載入為腳本」，觀察瀏覽器在有無 nosniff 保護時的不同反應！</p>
+            
+            <div class="scenario-grid">
+                <!-- nosniff Vulnerable -->
+                <div class="scenario-card attack">
+                    <div class="card-header" style="background: rgba(255, 75, 75, 0.2);">❌ 測試危險配置 (欠缺 nosniff)</div>
+                    <div class="card-body">
+                        <div style="background: #222; padding: 10px; border-radius: 8px 8px 0 0; border: 1px solid #444; border-bottom: none;">
+                            <span style="color: #888;">網頁嘗試執行：</span><br>
+                            <code style="color: #ffb84d;">&lt;script src="user_upload.txt"&gt;&lt;/script&gt;</code>
+                        </div>
+                        <div id="result-nosniff-vuln" style="min-height: 100px; background: #111; padding: 15px; border: 1px solid #444; border-radius: 0 0 8px 8px; color: #fff; font-family: monospace;">
+                            <span style="color: #666;">等待載入...</span>
+                        </div>
+                        
+                        <button id="btn-nosniff-attack" class="btn danger-btn" style="width: 100%; margin-top: 15px; padding: 10px; font-size: 1.1em; cursor: pointer; border-radius: 6px; border: none; font-weight: bold; box-shadow: 0 0 10px rgba(255,75,75,0.5);">😈 嘗試載入為腳本</button>
+                    </div>
+                </div>
+
+                <!-- nosniff Secure -->
+                <div class="scenario-card normal">
+                    <div class="card-header" style="background: rgba(77, 255, 184, 0.2);">✅ 測試安全配置 (開啟 nosniff)</div>
+                    <div class="card-body">
+                        <div style="background: #222; padding: 10px; border-radius: 8px 8px 0 0; border: 1px solid #444; border-bottom: none;">
+                            <span style="color: #888;">網頁嘗試執行：</span><br>
+                            <code style="color: #4dffb8;">&lt;script src="user_upload.txt"&gt;&lt;/script&gt;</code>
+                        </div>
+                        <div id="result-nosniff-secure" style="min-height: 100px; background: #111; padding: 15px; border: 1px solid #444; border-radius: 0 0 8px 8px; color: #fff; font-family: monospace;">
+                            <span style="color: #666;">等待載入...</span>
+                        </div>
+                        
+                        <button id="btn-nosniff-secure-attack" class="btn warning-btn" style="width: 100%; margin-top: 15px; padding: 10px; font-size: 1.1em; cursor: pointer; border-radius: 6px; border: none; font-weight: bold; box-shadow: 0 0 10px rgba(255,184,77,0.5);">😈 嘗試載入為腳本</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 程式碼對比 -->
+        <section class="glass-panel" id="nosniff-code-comparison">
+            <h2><span class="icon">⚖️</span> 程式碼與系統對決：如何禁用 MIME 嗅探？</h2>
+            <div class="comparison-grid">
+                <!-- Vulnerable -->
+                <div class="code-window vulnerable">
+                    <div class="window-header">
+                        <span class="dot red"></span>
+                        <span class="dot yellow"></span>
+                        <span class="dot green"></span>
+                        <span class="filename">PHP (危險的配置方式 ❌)</span>
+                    </div>
+                    <div class="window-body">
+<pre><code class="language-php">
+<span class="comment">// 🚨 危險：僅設置了 Content-Type，未限制瀏覽器的嗅探行為</span>
+<span class="comment">// 即使宣告為 text/plain，若內容包含 JS，瀏覽器仍可能執行它</span>
+<span class="highlight-line-danger">header("Content-Type: text/plain");</span>
+echo $user_uploaded_file_content;
+</code></pre>
+                    </div>
+                </div>
+
+                <!-- Secure -->
+                <div class="code-window secure">
+                    <div class="window-header">
+                        <span class="dot red"></span>
+                        <span class="dot yellow"></span>
+                        <span class="dot green"></span>
+                        <span class="filename">伺服器設定 (安全的防護方式 ✅)</span>
+                    </div>
+                    <div class="window-body">
+<pre><code class="language-php">
+<span class="comment">// ✨ PHP 安全寫法：強制加上 nosniff 標記</span>
+<span class="highlight-line-safe">header("X-Content-Type-Options: nosniff");</span>
+header("Content-Type: text/plain; charset=UTF-8");
+echo $user_uploaded_file_content;
+
+<span class="comment">// ✨ 或在 Web 伺服器 (Apache) 全局配置：</span>
+<span class="comment">// Header set X-Content-Type-Options "nosniff"</span>
+
+<span class="comment">// ✨ Nginx 全局配置：</span>
+<span class="comment">// add_header X-Content-Type-Options "nosniff" always;</span>
+</code></pre>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 開發建議 -->
+        <section class="glass-panel" id="nosniff-recommendations">
+            <h2><span class="icon">🛡️</span> 開發與維運建議：資源類型的嚴格管控</h2>
+            <div class="rec-grid">
+                <div class="rec-card">
+                    <div class="rec-icon">🗂️</div>
+                    <h3>搭配正確的 MIME 類型</h3>
+                    <p>設置 nosniff 的前提是伺服器必須精確回傳正確的 Content-Type。例如，CSS 檔案必須宣告為 `text/css`，否則在 nosniff 開啟的情況下，瀏覽器會拒絕加載樣式。</p>
+                </div>
+                
+                <div class="rec-card">
+                    <div class="rec-icon">🔍</div>
+                    <h3>上傳檔案的深度過濾</h3>
+                    <p>針對上傳功能，應檢查檔案「真實內容」是否與副檔名相符。對圖片檔案可進行重新縮放或轉檔，移除內嵌的惡意元數據 (Metadata) 或腳本代碼。</p>
+                </div>
+
+                <div class="rec-card">
+                    <div class="rec-icon">🧱</div>
+                    <h3>與 CSP 縱深防禦結合</h3>
+                    <p>此標頭應與 Content Security Policy (CSP) 配合使用。即便駭客繞過了 MIME 限制，CSP 也能從根本上限制惡意腳本的執行來源。</p>
+                </div>
+
+                <div class="rec-card">
+                    <div class="rec-icon">✅</div>
+                    <h3>納入資安基準配置</h3>
+                    <p>缺少 nosniff 通常被掃描工具視為中低風險，但在資管稽核流程中，應將其列為網頁伺服器基準配置 (Baseline Configuration) 的全站必備標頭。</p>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer>
+        <p>為高職生設計的資訊安全教育平台 | 守護代碼，從你我做起 💻</p>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>
